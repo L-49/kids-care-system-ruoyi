@@ -1,0 +1,212 @@
+[
+  {
+    "module": "幼儿档案",
+    "name": "分页列表",
+    "ok": true,
+    "detail": "total=35 rows=10"
+  },
+  {
+    "module": "幼儿档案",
+    "name": "按姓名模糊查询",
+    "ok": true,
+    "detail": "王 → total=1"
+  },
+  {
+    "module": "幼儿档案",
+    "name": "按班级筛选",
+    "ok": true,
+    "detail": "clazzId=1 → total=8"
+  },
+  {
+    "module": "幼儿档案",
+    "name": "仅看待补全",
+    "ok": true,
+    "detail": "total=25"
+  },
+  {
+    "module": "幼儿档案",
+    "name": "详情",
+    "ok": true,
+    "detail": "name=张小明 clazzName=大班 completeness=100 missing="
+  },
+  {
+    "module": "幼儿档案",
+    "name": "过敏幼儿清单",
+    "ok": true,
+    "detail": "count=10"
+  },
+  {
+    "module": "幼儿档案",
+    "name": "在园幼儿下拉(all)",
+    "ok": true,
+    "detail": "count=34"
+  },
+  {
+    "module": "幼儿档案",
+    "name": "新增",
+    "ok": true,
+    "detail": "msg=操作成功 id=67"
+  },
+  {
+    "module": "幼儿档案",
+    "name": "空姓名应被拒绝",
+    "ok": true,
+    "detail": "code=500 msg=幼儿姓名不能为空"
+  },
+  {
+    "module": "幼儿档案",
+    "name": "缺班级是否被拒绝",
+    "ok": true,
+    "detail": "code=500 msg=\r\n### Error updating database.  Cause: java.sql.SQLIntegrityConstraintViolationException: Column 'gender' cannot be null\r\n### The error may exist in URL [jar:nested:/D:/project/work2/kids-care-交付包-20261018/kids-care-ruoyi/kids-admin/target/kids-admin.jar/!BOOT-INF/lib/kids-care-platform-3.9.2.jar!/mapper/care/ChildMapper.xml]\r\n### The error may involve com.kids.care.mapper.ChildMapper.insertChild-Inline\r\n### The error occurred while setting parameters\r\n### SQL: insert into child (             id,             name,             gender,             birthday,             clazz_id,             guardian_name,             guardian_phone,             address,             allergy,             enroll_date,             status,             create_time,             deleted         ) values (             ?,             ?,             ?,             ?,             ?,             ?,             ?,             ?,             ?,             ?,             ?,             sysdate(),             0         )\r\n### Cause: java.sql.SQLIntegrityConstraintViolationException: Column 'gender' cannot be null\n; Column 'gender' cannot be null（期望被拒绝）"
+  },
+  {
+    "module": "幼儿档案",
+    "name": "非法手机号是否被拒绝",
+    "ok": true,
+    "detail": "code=500 msg=\r\n### Error updating database.  Cause: java.sql.SQLIntegrityConstraintViolationException: Column 'gender' cannot be null\r\n### The error may exist in URL [jar:nested:/D:/project/work2/kids-care-交付包-20261018/kids-care-ruoyi/kids-admin/target/kids-admin.jar/!BOOT-INF/lib/kids-care-platform-3.9.2.jar!/mapper/care/ChildMapper.xml]\r\n### The error may involve com.kids.care.mapper.ChildMapper.insertChild-Inline\r\n### The error occurred while setting parameters\r\n### SQL: insert into child (             id,             name,             gender,             birthday,             clazz_id,             guardian_name,             guardian_phone,             address,             allergy,             enroll_date,             status,             create_time,             deleted         ) values (             ?,             ?,             ?,             ?,             ?,             ?,             ?,             ?,             ?,             ?,             ?,             sysdate(),             0         )\r\n### Cause: java.sql.SQLIntegrityConstraintViolationException: Column 'gender' cannot be null\n; Column 'gender' cannot be null（期望被拒绝）"
+  },
+  {
+    "module": "幼儿档案",
+    "name": "局部修改是否覆盖其他字段",
+    "ok": true,
+    "detail": "改后 guardianName=__验证家长 guardianPhone=13800001111 birthday=2021-05-01"
+  },
+  {
+    "module": "幼儿档案",
+    "name": "调班+留痕",
+    "ok": true,
+    "detail": "调班code=500 变更记录=1 条，最新=新增"
+  },
+  {
+    "module": "幼儿档案",
+    "name": "调班缺参数校验",
+    "ok": true,
+    "detail": "code=500 msg=请选择目标班级"
+  },
+  {
+    "module": "幼儿档案",
+    "name": "Excel 导出",
+    "ok": true,
+    "detail": "status=200 bytes=6861 magic=b'PK'"
+  },
+  {
+    "module": "幼儿档案",
+    "name": "导入模板下载",
+    "ok": true,
+    "detail": "status=200 bytes=3960"
+  },
+  {
+    "module": "幼儿档案",
+    "name": "教师可查列表",
+    "ok": true,
+    "detail": "teacher total=36"
+  },
+  {
+    "module": "幼儿档案",
+    "name": "教师可新增",
+    "ok": false,
+    "detail": "code=500 msg=\r\n### Error updating database.  Cause: java.sql.SQLIntegrityConstraintViolationException: Column 'gender' cannot be null\r\n### The error may exist in URL [jar:nested:/D:/project/work2/kids-care-交付包-20261018/kids-care-ruoyi/kids-admin/target/kids-admin.jar/!BOOT-INF/lib/kids-care-platform-3.9.2.jar!/mapper/care/ChildMapper.xml]\r\n### The error may involve com.kids.care.mapper.ChildMapper.insertChild-Inline\r\n### The error occurred while setting parameters\r\n### SQL: insert into child (             id,             name,             gender,             birthday,             clazz_id,             guardian_name,             guardian_phone,             address,             allergy,             enroll_date,             status,             create_time,             deleted         ) values (             ?,             ?,             ?,             ?,             ?,             ?,             ?,             ?,             ?,             ?,             ?,             sysdate(),             0         )\r\n### Cause: java.sql.SQLIntegrityConstraintViolationException: Column 'gender' cannot be null\n; Column 'gender' cannot be null"
+  },
+  {
+    "module": "幼儿档案",
+    "name": "家长越权查列表应 403",
+    "ok": true,
+    "detail": "code=403 msg=没有权限，请联系管理员授权"
+  },
+  {
+    "module": "通知公告",
+    "name": "分页列表",
+    "ok": true,
+    "detail": "total=8 rows=8"
+  },
+  {
+    "module": "通知公告",
+    "name": "按标题筛选",
+    "ok": true,
+    "detail": "title=春季 → total=1"
+  },
+  {
+    "module": "通知公告",
+    "name": "按类型筛选",
+    "ok": true,
+    "detail": "type=通知 → total=2"
+  },
+  {
+    "module": "通知公告",
+    "name": "按状态筛选(已撤回)",
+    "ok": true,
+    "detail": "status=3 → total=1"
+  },
+  {
+    "module": "通知公告",
+    "name": "新增草稿",
+    "ok": true,
+    "detail": "msg=操作成功 id=24"
+  },
+  {
+    "module": "通知公告",
+    "name": "详情",
+    "ok": true,
+    "detail": "title=__验证公告 status=0 targetLabel=全园"
+  },
+  {
+    "module": "通知公告",
+    "name": "编辑",
+    "ok": false,
+    "detail": "msg=\r\n### Error updating database.  Cause: java.sql.SQLIntegrityConstraintViolationException: Column 'target_type' cannot be null\r\n### The error may exist in URL [jar:nested:/D:/project/work2/kids-care-交付包-20261018/kids-care-ruoyi/kids-admin/target/kids-admin.jar/!BOOT-INF/lib/kids-care-platform-3.9.2.jar!/mapper/care/NoticeMapper.xml]\r\n### The error may involve com.kids.care.mapper.NoticeMapper.updateNotice-Inline\r\n### The error occurred while setting parameters\r\n### SQL: update notice  SET title = ?,             content = ?,             type = ?,             publisher = ?,             status = ?,             target_type = ?,             target_id = ?,             publish_time = ?,             update_by = ?,             update_time = sysdate()  where id = ? and deleted = 0\r\n### Cause: java.sql.SQLIntegrityConstraintViolationException: Column 'target_type' cannot be null\n; Column 'target_type' cannot be null"
+  },
+  {
+    "module": "通知公告",
+    "name": "发布",
+    "ok": true,
+    "detail": "发布code=200 状态=2 时间=2026-10-18 20:11:36"
+  },
+  {
+    "module": "通知公告",
+    "name": "撤回",
+    "ok": true,
+    "detail": "撤回code=200 状态=3"
+  },
+  {
+    "module": "通知公告",
+    "name": "已撤回不可再发布",
+    "ok": true,
+    "detail": "code=500 msg=已撤回的公告不能直接发布，请先修改后重新提交"
+  },
+  {
+    "module": "通知公告",
+    "name": "新增定时公告",
+    "ok": true,
+    "detail": "code=200 msg=操作成功 id=None"
+  },
+  {
+    "module": "通知公告",
+    "name": "定时公告缺发布时间应拒绝",
+    "ok": true,
+    "detail": "code=500 msg=定时发布的公告必须填写发布时间"
+  },
+  {
+    "module": "通知公告",
+    "name": "已发布状态可否填未来时间",
+    "ok": true,
+    "detail": "code=200 msg=操作成功（若允许则家长端会提前看到未到点公告）"
+  },
+  {
+    "module": "通知公告",
+    "name": "家长端可见列表",
+    "ok": false,
+    "detail": "家长可见=0 条；可见范围=[]；是否含未来公告=False"
+  },
+  {
+    "module": "通知公告",
+    "name": "家长端列表只含已发布",
+    "ok": true,
+    "detail": "家长列表=0 条 状态集合=[]"
+  },
+  {
+    "module": "通知公告",
+    "name": "教师可查公告",
+    "ok": true,
+    "detail": "teacher total=10"
+  }
+]
