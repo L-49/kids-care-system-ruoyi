@@ -1,0 +1,187 @@
+[
+  {
+    "case": "空姓名被拒",
+    "pass": true,
+    "detail": "code=500 msg=幼儿姓名不能为空"
+  },
+  {
+    "case": "未选班级被拒",
+    "pass": true,
+    "detail": "code=500 msg=请选择所在班级"
+  },
+  {
+    "case": "非法手机号被拒",
+    "pass": true,
+    "detail": "code=500 msg=家长电话格式不正确，应为 11 位手机号"
+  },
+  {
+    "case": "非法性别被拒",
+    "pass": true,
+    "detail": "code=500 msg=性别只能是“男”或“女”"
+  },
+  {
+    "case": "非法状态被拒",
+    "pass": true,
+    "detail": "code=500 msg=在园状态只能是 0（离园）或 1（在园）"
+  },
+  {
+    "case": "非法请求未写入脏数据",
+    "pass": true,
+    "detail": ""
+  },
+  {
+    "case": "新增正常档案",
+    "pass": true,
+    "detail": "id=81"
+  },
+  {
+    "case": "局部修改接口返回",
+    "pass": true,
+    "detail": "(200, '操作成功')"
+  },
+  {
+    "case": "局部修改未清空其它字段",
+    "pass": true,
+    "detail": "name=__修复验证甲 gender=女 clazzId=1 guardian=验证家长"
+  },
+  {
+    "case": "局部修改生效",
+    "pass": true,
+    "detail": "13900002222"
+  },
+  {
+    "case": "调班成功",
+    "pass": true,
+    "detail": "(200, '操作成功')"
+  },
+  {
+    "case": "调班后班级正确",
+    "pass": true,
+    "detail": "中班 -> 中班"
+  },
+  {
+    "case": "调班后其它字段保留",
+    "pass": true,
+    "detail": "name=__修复验证甲 phone=13900002222"
+  },
+  {
+    "case": "调班写变更记录",
+    "pass": true,
+    "detail": "[('调班', '中班'), ('修改', '13900002222'), ('新增', '建立幼儿档案')]"
+  },
+  {
+    "case": "重复调同班被拒",
+    "pass": true,
+    "detail": "(500, '该幼儿已在目标班级中，无需调班')"
+  },
+  {
+    "case": "教师删除幼儿被拒",
+    "pass": true,
+    "detail": "(403, '没有权限，请联系管理员授权')"
+  },
+  {
+    "case": "模板可下载",
+    "pass": true,
+    "detail": "['姓名', '性别', '出生日期', '所在班级', '家长姓名', '家长电话', '家庭住址', '过敏史/禁忌', '入园日期', '状态']"
+  },
+  {
+    "case": "单行导入成功",
+    "pass": true,
+    "detail": "{'success': 1, 'fail': 0, 'errors': []}"
+  },
+  {
+    "case": "多行导入按行统计",
+    "pass": true,
+    "detail": "{'success': 1, 'fail': 2, 'errors': ['第 3 行：班级【不存在的班】不存在，请先在班级管理中创建', '第 4 行：所在班级不能为空']}"
+  },
+  {
+    "case": "导入提示班级不存在",
+    "pass": true,
+    "detail": "第 3 行：班级【不存在的班】不存在，请先在班级管理中创建 第 4 行：所在班级不能为空"
+  },
+  {
+    "case": "导入提示班级必填",
+    "pass": true,
+    "detail": "第 3 行：班级【不存在的班】不存在，请先在班级管理中创建 第 4 行：所在班级不能为空"
+  },
+  {
+    "case": "已发布+未来时间被拒",
+    "pass": true,
+    "detail": "(500, '发布时间晚于当前时间，请把发布方式改为“定时发布”')"
+  },
+  {
+    "case": "定时+过去时间被拒",
+    "pass": true,
+    "detail": "(500, '定时发布时间必须晚于当前时间')"
+  },
+  {
+    "case": "空标题被拒",
+    "pass": true,
+    "detail": "(500, '公告标题不能为空')"
+  },
+  {
+    "case": "定时公告创建成功",
+    "pass": true,
+    "detail": "(200, '操作成功')"
+  },
+  {
+    "case": "立即发布创建成功",
+    "pass": true,
+    "detail": "(200, '操作成功')"
+  },
+  {
+    "case": "家长可读公告接口",
+    "pass": true,
+    "detail": "200"
+  },
+  {
+    "case": "定时未到点家长看不到",
+    "pass": true,
+    "detail": ""
+  },
+  {
+    "case": "已发布家长能看到",
+    "pass": true,
+    "detail": "count=9 ids=[42, 22, 21, 20, 19, 5, 4, 2]"
+  },
+  {
+    "case": "家长可访问公告列表",
+    "pass": true,
+    "detail": "200"
+  },
+  {
+    "case": "家长列表只含已发布",
+    "pass": true,
+    "detail": "{2}"
+  },
+  {
+    "case": "脏数据也不会提前可见",
+    "pass": true,
+    "detail": ""
+  },
+  {
+    "case": "公告局部修改返回",
+    "pass": true,
+    "detail": "(200, '操作成功')"
+  },
+  {
+    "case": "公告局部修改未清空",
+    "pass": true,
+    "detail": "status=2 type=通知 content=x"
+  },
+  {
+    "case": "家长菜单含公告入口",
+    "pass": true,
+    "detail": "[('/mychild', 'index'), ('/mychild', 'notice')]"
+  },
+  {
+    "case": "园长菜单不含家长端",
+    "pass": true,
+    "detail": "[]"
+  },
+  {
+    "case": "公告类型字典 7 项",
+    "pass": true,
+    "detail": "['通知', '活动', '食谱', '放假', '园务', '班级', '健康']"
+  }
+]
