@@ -16,6 +16,7 @@ import com.kids.care.mapper.NoticeMapper;
 import com.kids.care.service.INoticeService;
 import com.kids.care.utils.ScopeUtils;
 import com.kids.common.exception.ServiceException;
+import com.kids.common.utils.StringUtils;
 
 /**
  * 通知公告 Service 实现。
@@ -81,18 +82,23 @@ public class NoticeServiceImpl implements INoticeService
     @Override
     public int insertNotice(Notice notice)
     {
+        Date now = new Date();
+        if (StringUtils.isEmpty(notice.getTitle()) || notice.getTitle().trim().isEmpty())
+        {
+            throw new ServiceException("公告标题不能为空");
+        }
+        notice.setTitle(notice.getTitle().trim());
+        if (StringUtils.isEmpty(notice.getType()))
+        {
+            notice.setType("通知");
+        }
         if (notice.getStatus() == null)
         {
             notice.setStatus(STATUS_DRAFT);
         }
-        if (notice.getStatus() == STATUS_SCHEDULED && notice.getPublishTime() == null)
-        {
-            throw new ServiceException("定时发布的公告必须填写发布时间");
-        }
-        if (notice.getStatus() == STATUS_PUBLISHED && notice.getPublishTime() == null)
-        {
-            notice.setPublishTime(new Date());
-        }
+        checkPublishTime(notice.getStatus(), notice.getPublishTime(), now);
+        // 立即发布不传发布时间，交给数据库 sysdate() 落库，避免 JVM 与数据库毫秒取整差异
+        // 造成「发布时间比数据库当前时间晚 1 秒」，家长端短暂看不到刚发的公告
         if (notice.getPublisher() == null)
         {
             notice.setPublisher(ScopeUtils.currentUsername());
@@ -100,6 +106,10 @@ public class NoticeServiceImpl implements INoticeService
         if (notice.getTargetType() == null)
         {
             notice.setTargetType("all");
+        }
+        if (!"class".equals(notice.getTargetType()))
+        {
+            notice.setTargetId(null);
         }
         return noticeMapper.insertNotice(notice);
     }
@@ -112,27 +122,59 @@ public class NoticeServiceImpl implements INoticeService
         {
             throw new ServiceException("公告不存在或已删除");
         }
-        if (old.getStatus() == STATUS_PUBLISHED && notice.getStatus() != null
-                && notice.getStatus() == STATUS_DRAFT)
+        // 只提交了部分字段时，用原值补齐，避免 update 语句把未提交的列写成 NULL
+        if (notice.getTitle() == null)
+        {
+            notice.setTitle(old.getTitle());
+        }
+        if (notice.getContent() == null)
+        {
+            notice.setContent(old.getContent());
+        }
+        if (notice.getType() == null)
+        {
+            notice.setType(old.getType());
+        }
+        if (notice.getPublisher() == null)
+        {
+            notice.setPublisher(old.getPublisher());
+        }
+        if (notice.getStatus() == null)
+        {
+            notice.setStatus(old.getStatus());
+        }
+        if (notice.getTargetType() == null)
+        {
+            notice.setTargetType(old.getTargetType());
+        }
+        if (!"class".equals(notice.getTargetType()))
+        {
+            notice.setTargetId(null);
+        }
+        else if (notice.getTargetId() == null)
+        {
+            notice.setTargetId(old.getTargetId());
+        }
+
+        if (notice.getTitle().trim().isEmpty())
+        {
+            throw new ServiceException("公告标题不能为空");
+        }
+        notice.setTitle(notice.getTitle().trim());
+
+        if (old.getStatus() == STATUS_PUBLISHED && notice.getStatus() == STATUS_DRAFT)
         {
             throw new ServiceException("已发布的公告不能退回草稿，请使用撤回");
         }
-        if (notice.getStatus() != null && notice.getStatus() == STATUS_SCHEDULED
-                && notice.getPublishTime() == null)
-        {
-            throw new ServiceException("定时发布的公告必须填写发布时间");
-        }
         // 已发布的公告只允许保持「已发布」，改状态请走撤回 / 立即发布按钮
-        if (old.getStatus() == STATUS_PUBLISHED && notice.getStatus() != null
-                && notice.getStatus() != STATUS_PUBLISHED)
+        if (old.getStatus() == STATUS_PUBLISHED && notice.getStatus() != STATUS_PUBLISHED)
         {
             throw new ServiceException("已发布的公告不能修改发布方式，如需下线请使用撤回");
         }
-        if (notice.getStatus() != null && notice.getStatus() == STATUS_PUBLISHED
-                && notice.getPublishTime() == null)
-        {
-            notice.setPublishTime(old.getPublishTime() == null ? new Date() : old.getPublishTime());
-        }
+        // 发布时间：未提交时沿用原值；两者都为空则交给数据库 sysdate() 落库
+        Date publishTime = notice.getPublishTime() == null ? old.getPublishTime() : notice.getPublishTime();
+        checkPublishTime(notice.getStatus(), publishTime, new Date());
+        notice.setPublishTime(publishTime);
         return noticeMapper.updateNotice(notice);
     }
 
@@ -224,6 +266,37 @@ public class NoticeServiceImpl implements INoticeService
             Long childId = ScopeUtils.scopeChildId();
             Child child = childId == null ? null : childMapper.selectChildById(childId);
             query.setVisibleClazzId(child != null && child.getClazzId() != null ? child.getClazzId() : -1L);
+        }
+    }
+
+    /**
+     * 发布方式与发布时间的一致性校验。
+     *
+     * <ul>
+     *   <li>定时发布：必须填发布时间，且必须晚于当前时间，否则定时任务会立刻把它发出去；</li>
+     *   <li>立即发布：发布时间不能晚于当前时间，否则家长端会提前看到还没到点的公告。</li>
+     * </ul>
+     */
+    private void checkPublishTime(Integer status, Date publishTime, Date now)
+    {
+        if (status == null)
+        {
+            return;
+        }
+        if (status == STATUS_SCHEDULED)
+        {
+            if (publishTime == null)
+            {
+                throw new ServiceException("定时发布的公告必须填写发布时间");
+            }
+            if (!publishTime.after(now))
+            {
+                throw new ServiceException("定时发布时间必须晚于当前时间");
+            }
+        }
+        if (status == STATUS_PUBLISHED && publishTime != null && publishTime.after(now))
+        {
+            throw new ServiceException("发布时间晚于当前时间，请把发布方式改为“定时发布”");
         }
     }
 

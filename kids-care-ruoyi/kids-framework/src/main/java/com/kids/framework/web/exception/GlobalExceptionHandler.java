@@ -3,6 +3,8 @@ package com.kids.framework.web.exception;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.BindException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -28,6 +30,26 @@ import com.kids.common.utils.html.EscapeUtil;
 public class GlobalExceptionHandler
 {
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    /**
+     * 唯一键冲突：把数据库原始报错换成用户能看懂的提示
+     */
+    @ExceptionHandler(DuplicateKeyException.class)
+    public AjaxResult handleDuplicateKeyException(DuplicateKeyException e, HttpServletRequest request)
+    {
+        log.error("请求地址'{}',数据库唯一约束冲突", request.getRequestURI(), e);
+        return AjaxResult.error("数据已存在，请勿重复提交");
+    }
+
+    /**
+     * 其他数据库异常：原始 SQL 报错只写日志，不回传给前端
+     */
+    @ExceptionHandler(DataAccessException.class)
+    public AjaxResult handleDataAccessException(DataAccessException e, HttpServletRequest request)
+    {
+        log.error("请求地址'{}',数据库操作失败", request.getRequestURI(), e);
+        return AjaxResult.error("数据处理失败，请检查必填项是否完整、关联数据是否存在");
+    }
 
     /**
      * 权限校验异常

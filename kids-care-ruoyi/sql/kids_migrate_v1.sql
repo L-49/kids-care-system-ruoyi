@@ -111,6 +111,9 @@ VALUES
 (2, '活动', '活动', 'notice_type', '', 'success', 'N', '0', 'admin', SYSDATE(), '', NULL, '公告类型'),
 (3, '食谱', '食谱', 'notice_type', '', 'warning', 'N', '0', 'admin', SYSDATE(), '', NULL, '公告类型'),
 (4, '放假', '放假', 'notice_type', '', 'danger', 'N', '0', 'admin', SYSDATE(), '', NULL, '公告类型'),
+(5, '园务', '园务', 'notice_type', '', 'info', 'N', '0', 'admin', SYSDATE(), '', NULL, '公告类型'),
+(6, '班级', '班级', 'notice_type', '', 'primary', 'N', '0', 'admin', SYSDATE(), '', NULL, '公告类型'),
+(7, '健康', '健康', 'notice_type', '', 'success', 'N', '0', 'admin', SYSDATE(), '', NULL, '公告类型'),
 (1, '事假', '事假', 'leave_type', '', 'info', 'Y', '0', 'admin', SYSDATE(), '', NULL, '请假类型'),
 (2, '病假', '病假', 'leave_type', '', 'warning', 'N', '0', 'admin', SYSDATE(), '', NULL, '请假类型');
 

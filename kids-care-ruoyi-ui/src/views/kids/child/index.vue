@@ -242,7 +242,8 @@ const data = reactive({
   queryParams: { pageNum: 1, pageSize: 10, name: null, clazzId: null, status: null, incompleteOnly: null },
   rules: {
     name: [{ required: true, message: '幼儿姓名不能为空', trigger: 'blur' }],
-    clazzId: [{ required: true, message: '请选择班级', trigger: 'change' }]
+    clazzId: [{ required: true, message: '请选择班级', trigger: 'change' }],
+    guardianPhone: [{ pattern: /^1[3-9]\d{9}$/, message: '请输入正确的 11 位手机号', trigger: 'blur' }]
   }
 })
 

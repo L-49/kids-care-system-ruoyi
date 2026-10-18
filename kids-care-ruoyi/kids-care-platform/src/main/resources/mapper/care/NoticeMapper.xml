@@ -33,7 +33,11 @@
             <if test="publisher != null and publisher != ''"> and publisher like concat('%', #{publisher}, '%')</if>
             <choose>
                 <when test="status != null"> and status = #{status}</when>
-                <when test="onlyPublished != null and onlyPublished"> and status = 2</when>
+                <when test="onlyPublished != null and onlyPublished">
+                    and status = 2
+                    <!-- 双保险：已发布但发布时间还没到（历史数据）不对家长展示 -->
+                    and (publish_time is null or publish_time &lt;= sysdate())
+                </when>
                 <otherwise> and status != 3</otherwise>
             </choose>
             <if test="visibleClazzId != null">
@@ -89,7 +93,7 @@
             status = #{status},
             target_type = #{targetType},
             target_id = #{targetId},
-            publish_time = #{publishTime},
+            publish_time = ifnull(#{publishTime}, sysdate()),
             update_by = #{updateBy},
             update_time = sysdate()
         </set>

@@ -24,7 +24,8 @@ INSERT INTO sys_menu (menu_id, menu_name, parent_id, order_num, path, component,
 VALUES
 (2000, '工作台',   0, 0, 'dashboard', 'kids/dashboard/index', '', '', 1, 0, 'C', '0', '0', '', 'dashboard', 'admin', SYSDATE(), '', NULL, '数据看板'),
 (2500, '我的孩子', 0, 9, 'mychild',    NULL,                   '', '', 1, 0, 'M', '0', '0', '', 'heart', 'admin', SYSDATE(), '', NULL, 'parent-only'),
-(2510, '孩子档案', 2500, 1, 'index',    'kids/my-child/index',  '', '', 1, 0, 'C', '0', '0', 'kids:mychild:view', 'people', 'admin', SYSDATE(), '', NULL, 'parent-only');
+(2510, '孩子档案', 2500, 1, 'index',    'kids/my-child/index',  '', '', 1, 0, 'C', '0', '0', 'kids:mychild:view', 'people', 'admin', SYSDATE(), '', NULL, 'parent-only'),
+(2520, '通知公告', 2500, 2, 'notice',   'kids/notice/index',    '', '', 1, 0, 'C', '0', '0', 'kids:notice:list', 'notification', 'admin', SYSDATE(), '', NULL, 'parent-only');
 
 -- -------------------------------------------------------------
 -- 幼儿管理
@@ -127,12 +128,13 @@ VALUES
 -- 角色授权
 -- 园长 = 超级管理员(role_id=1)，若依内 admin 直接拥有全部权限，无需分配
 -- 教师(100)：业务数据可维护，教职工与收费只读，系统管理不可见
--- 家长(101)：工作台 + 我的孩子 + 通知公告（只读）
+-- 注意：幼儿「删除」（2114）只授给园长，教师可新增/修改档案但不能删档
+-- 家长(101)：工作台 + 我的孩子（孩子档案、通知公告，只读）
 -- -------------------------------------------------------------
 INSERT INTO sys_role_menu (role_id, menu_id)
 SELECT 100, menu_id FROM sys_menu WHERE menu_id IN (
     2000,
-    2100, 2110, 2111, 2112, 2113, 2114, 2115, 2116,
+    2100, 2110, 2111, 2112, 2113, 2115, 2116,
     2120, 2121, 2122, 2123, 2124, 2125,
     2130, 2131,
     2200, 2210, 2211, 2212, 2213, 2214,
@@ -145,9 +147,9 @@ SELECT 100, menu_id FROM sys_menu WHERE menu_id IN (
     2430, 2431
 );
 
--- 家长(101)：工作台 + 我的孩子（公告在家园互动页内查看，不再单独开放公告菜单）
+-- 家长(101)：工作台 + 我的孩子（孩子档案、通知公告，只读）
 INSERT INTO sys_role_menu (role_id, menu_id) VALUES
-(101, 2000), (101, 2500), (101, 2510);
+(101, 2000), (101, 2500), (101, 2510), (101, 2520);
 
 -- 园长角色名称对齐
 UPDATE sys_role SET role_name = '园长' WHERE role_id = 1;

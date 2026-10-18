@@ -329,6 +329,9 @@ function handleDelete(row) {
 
 onMounted(() => {
   getList()
-  listClazz({ pageNum: 1, pageSize: 100 }).then((res) => { clazzList.value = res.rows || [] })
+  // 家长只读访问本页时没有班级管理权限，跳过班级下拉加载，避免 403 弹窗
+  if (proxy.$auth.hasPermi('kids:clazz:list')) {
+    listClazz({ pageNum: 1, pageSize: 100 }).then((res) => { clazzList.value = res.rows || [] })
+  }
 })
 </script>

@@ -3,6 +3,7 @@ package com.kids.care.service.impl;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -117,10 +118,8 @@ public class ChildServiceImpl implements IChildService
     @Transactional(rollbackFor = Exception.class)
     public int insertChild(Child child)
     {
-        if (StringUtils.isEmpty(child.getName()))
-        {
-            throw new ServiceException("幼儿姓名不能为空");
-        }
+        validateChild(child, true);
+        child.setName(child.getName().trim());
         checkCapacity(child.getClazzId(), null);
         child.setStatus(child.getStatus() == null ? 1 : child.getStatus());
         int rows = childMapper.insertChild(child);
@@ -132,15 +131,24 @@ public class ChildServiceImpl implements IChildService
     @Transactional(rollbackFor = Exception.class)
     public int updateChild(Child child)
     {
+        if (child.getId() == null)
+        {
+            throw new ServiceException("缺少幼儿ID，无法修改");
+        }
         Child old = childMapper.selectChildById(child.getId());
         if (old == null)
         {
             throw new ServiceException("幼儿档案不存在或已删除");
         }
+        validateChild(child, false);
         ScopeUtils.checkChildAccessible(old.getId());
         if (child.getClazzId() != null && !Objects.equals(child.getClazzId(), old.getClazzId()))
         {
             checkCapacity(child.getClazzId(), child.getId());
+        }
+        if (child.getName() != null)
+        {
+            child.setName(child.getName().trim());
         }
         int rows = childMapper.updateChild(child);
         diffAndLog(old, child);
@@ -197,6 +205,7 @@ public class ChildServiceImpl implements IChildService
         Child patch = new Child();
         patch.setId(childId);
         patch.setClazzId(targetClazzId);
+        patch.setUpdateBy(ScopeUtils.currentUsername());
         childMapper.updateChild(patch);
 
         writeLog(child, "调班", "clazzId", oldClazz, target == null ? null : target.getName(), null);
@@ -301,6 +310,51 @@ public class ChildServiceImpl implements IChildService
         return clazz == null ? null : clazz.getName();
     }
 
+    /**
+     * 档案字段校验：接口层也要拦，不能只依赖前端表单。
+     *
+     * <p>新增时姓名与班级必填；修改时只校验本次提交的字段，未提交（null）视为不修改。</p>
+     */
+    private void validateChild(Child child, boolean isInsert)
+    {
+        if (child == null)
+        {
+            throw new ServiceException("请求内容为空");
+        }
+        if (isInsert || child.getName() != null)
+        {
+            if (StringUtils.isEmpty(child.getName()) || child.getName().trim().isEmpty())
+            {
+                throw new ServiceException("幼儿姓名不能为空");
+            }
+            if (child.getName().trim().length() > 20)
+            {
+                throw new ServiceException("幼儿姓名不能超过 20 个字符");
+            }
+        }
+        if (isInsert && child.getClazzId() == null)
+        {
+            throw new ServiceException("请选择所在班级");
+        }
+        if (StringUtils.isNotEmpty(child.getGender()) && !"男".equals(child.getGender()) && !"女".equals(child.getGender()))
+        {
+            throw new ServiceException("性别只能是“男”或“女”");
+        }
+        if (StringUtils.isNotEmpty(child.getGuardianPhone())
+                && !child.getGuardianPhone().trim().matches("^1[3-9]\\d{9}$"))
+        {
+            throw new ServiceException("家长电话格式不正确，应为 11 位手机号");
+        }
+        if (child.getStatus() != null && child.getStatus() != 0 && child.getStatus() != 1)
+        {
+            throw new ServiceException("在园状态只能是 0（离园）或 1（在园）");
+        }
+        if (child.getBirthday() != null && child.getBirthday().after(new Date()))
+        {
+            throw new ServiceException("出生日期不能晚于今天");
+        }
+    }
+
     /** 班级容量校验：在园幼儿数达到额定人数即拒绝，excludeChildId 用于修改场景排除自己 */
     private void checkCapacity(Long clazzId, Long excludeChildId)
     {
@@ -386,8 +440,8 @@ public class ChildServiceImpl implements IChildService
         List<Child> rows;
         try (InputStream in = file.getInputStream())
         {
-            // 若依模板首行为标题，从第 2 行开始解析
-            rows = new ExcelUtil<Child>(Child.class).importExcel(in, 1);
+            // titleNum = 表头所在行下标（0 表示第一行是表头，数据从第二行开始）
+            rows = new ExcelUtil<Child>(Child.class).importExcel(in, 0);
         }
         catch (Exception e)
         {
@@ -411,16 +465,20 @@ public class ChildServiceImpl implements IChildService
                     throw new ServiceException("姓名不能为空");
                 }
                 // 模板里填的是班级名称，这里换成班级ID并校验容量
-                if (StringUtils.isNotEmpty(row.getClazzName()))
+                if (StringUtils.isEmpty(row.getClazzName()))
                 {
-                    Clazz clazz = clazzMapper.selectByName(row.getClazzName().trim());
-                    if (clazz == null)
-                    {
-                        throw new ServiceException("班级【" + row.getClazzName() + "】不存在，请先在班级管理中创建");
-                    }
-                    row.setClazzId(clazz.getId());
-                    checkCapacity(row.getClazzId(), null);
+                    throw new ServiceException("所在班级不能为空");
                 }
+                Clazz clazz = clazzMapper.selectByName(row.getClazzName().trim());
+                if (clazz == null)
+                {
+                    throw new ServiceException("班级【" + row.getClazzName() + "】不存在，请先在班级管理中创建");
+                }
+                row.setClazzId(clazz.getId());
+                // 与手工新增共用同一套校验：姓名、性别、家长电话、出生日期
+                validateChild(row, true);
+                row.setName(row.getName().trim());
+                checkCapacity(row.getClazzId(), null);
                 row.setStatus(row.getStatus() == null ? 1 : row.getStatus());
                 childMapper.insertChild(row);
                 writeLog(row, "导入", null, null, "Excel 批量导入", null);

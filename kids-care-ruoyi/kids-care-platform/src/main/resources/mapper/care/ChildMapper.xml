@@ -95,20 +95,21 @@
         )
     </insert>
 
+    <!-- 只更新提交了值的字段：调班、家长改联系方式等场景只传部分字段，不能被置空 -->
     <update id="updateChild" parameterType="Child">
         update child
         <set>
-            name = #{name},
-            gender = #{gender},
-            birthday = #{birthday},
-            clazz_id = #{clazzId},
-            guardian_name = #{guardianName},
-            guardian_phone = #{guardianPhone},
-            address = #{address},
-            allergy = #{allergy},
-            enroll_date = #{enrollDate},
-            status = #{status},
-            update_by = #{updateBy},
+            <if test="name != null and name != ''">name = #{name},</if>
+            <if test="gender != null and gender != ''">gender = #{gender},</if>
+            <if test="birthday != null">birthday = #{birthday},</if>
+            <if test="clazzId != null">clazz_id = #{clazzId},</if>
+            <if test="guardianName != null">guardian_name = #{guardianName},</if>
+            <if test="guardianPhone != null">guardian_phone = #{guardianPhone},</if>
+            <if test="address != null">address = #{address},</if>
+            <if test="allergy != null">allergy = #{allergy},</if>
+            <if test="enrollDate != null">enroll_date = #{enrollDate},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
             update_time = sysdate()
         </set>
         where id = #{id} and deleted = 0
