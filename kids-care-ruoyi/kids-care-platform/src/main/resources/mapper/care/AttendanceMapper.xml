@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kids.care.mapper.AttendanceMapper">
+
+    <resultMap type="Attendance" id="AttendanceResult">
+        <result property="id"    column="id"/>
+        <result property="childId"    column="child_id"/>
+        <result property="clazzId"    column="clazz_id"/>
+        <result property="attDate"    column="att_date"/>
+        <result property="status"    column="status"/>
+        <result property="checkInTime"    column="check_in_time"/>
+        <result property="deleted"    column="deleted"/>
+        <result property="createBy"    column="create_by"/>
+        <result property="createTime"    column="create_time"/>
+        <result property="updateBy"    column="update_by"/>
+        <result property="updateTime"    column="update_time"/>
+        <result property="remark"    column="remark"/>
+    </resultMap>
+
+    <sql id="selectAttendanceVo">
+        select id, child_id, clazz_id, att_date, status, check_in_time, deleted, create_by, create_time, update_by, update_time, remark from attendance
+    </sql>
+
+    <select id="selectAttendanceList" parameterType="Attendance" resultMap="AttendanceResult">
+        <include refid="selectAttendanceVo"/>
+        <where>
+            deleted = 0
+            <if test="childId != null"> and child_id = #{childId}</if>
+            <if test="clazzId != null"> and clazz_id = #{clazzId}</if>
+            <if test="attDate != null"> and att_date = #{attDate}</if>
+            <if test="status != null and status != ''"> and status = #{status}</if>
+            <if test="checkInTime != null and checkInTime != ''"> and check_in_time like concat('%', #{checkInTime}, '%')</if>
+        </where>
+        order by id desc
+    </select>
+
+    <select id="selectAttendanceById" parameterType="Long" resultMap="AttendanceResult">
+        <include refid="selectAttendanceVo"/>
+        where id = #{id} and deleted = 0
+    </select>
+
+    <insert id="insertAttendance" parameterType="Attendance" useGeneratedKeys="true" keyProperty="id">
+        insert into attendance (
+            id,
+            child_id,
+            clazz_id,
+            att_date,
+            status,
+            check_in_time,
+            create_time,
+            deleted
+        ) values (
+            #{id},
+            #{childId},
+            #{clazzId},
+            #{attDate},
+            #{status},
+            #{checkInTime},
+            sysdate(),
+            0
+        )
+    </insert>
+
+    <update id="updateAttendance" parameterType="Attendance">
+        update attendance
+        <set>
+            child_id = #{childId},
+            clazz_id = #{clazzId},
+            att_date = #{attDate},
+            status = #{status},
+            check_in_time = #{checkInTime},
+            update_by = #{updateBy},
+            update_time = sysdate()
+        </set>
+        where id = #{id} and deleted = 0
+    </update>
+
+    <update id="deleteAttendanceById" parameterType="Long">
+        update attendance set deleted = 1, update_time = sysdate() where id = #{id}
+    </update>
+
+    <update id="deleteAttendanceByIds" parameterType="Long">
+        update attendance set deleted = 1, update_time = sysdate() where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 唯一键（child_id + att_date）冲突处理：查已软删的同日记录 -->
+    <select id="selectDeletedId" resultType="Long">
+        select id from attendance
+        where child_id = #{childId} and att_date = #{attDate} and deleted = 1
+        limit 1
+    </select>
+
+    <select id="countByChildAndDate" resultType="int">
+        select count(*) from attendance
+        where child_id = #{childId} and att_date = #{attDate} and deleted = 0
+    </select>
+
+    <update id="reviveAttendance">
+        update attendance
+        set deleted = 0, clazz_id = #{clazzId}, status = #{status},
+            check_in_time = #{checkInTime}, remark = #{remark}, update_time = sysdate()
+        where id = #{id}
+    </update>
+
+</mapper>

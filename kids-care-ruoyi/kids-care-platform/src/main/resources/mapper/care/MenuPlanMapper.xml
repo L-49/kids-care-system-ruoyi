@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kids.care.mapper.MenuPlanMapper">
+
+    <resultMap type="MenuPlan" id="MenuPlanResult">
+        <result property="id"    column="id"/>
+        <result property="menuDate"    column="menu_date"/>
+        <result property="mealType"    column="meal_type"/>
+        <result property="dishes"    column="dishes"/>
+        <result property="note"    column="note"/>
+        <result property="publisher"    column="publisher"/>
+        <result property="deleted"    column="deleted"/>
+        <result property="createBy"    column="create_by"/>
+        <result property="createTime"    column="create_time"/>
+        <result property="updateBy"    column="update_by"/>
+        <result property="updateTime"    column="update_time"/>
+    </resultMap>
+
+    <sql id="selectMenuPlanVo">
+        select id, menu_date, meal_type, dishes, note, publisher, deleted, create_by, create_time, update_by, update_time from menu_plan
+    </sql>
+
+    <select id="selectMenuPlanList" parameterType="MenuPlan" resultMap="MenuPlanResult">
+        <include refid="selectMenuPlanVo"/>
+        <where>
+            deleted = 0
+            <if test="menuDate != null"> and menu_date = #{menuDate}</if>
+            <if test="mealType != null and mealType != ''"> and meal_type = #{mealType}</if>
+            <if test="dishes != null and dishes != ''"> and dishes like concat('%', #{dishes}, '%')</if>
+            <if test="note != null and note != ''"> and note like concat('%', #{note}, '%')</if>
+            <if test="publisher != null and publisher != ''"> and publisher like concat('%', #{publisher}, '%')</if>
+        </where>
+        order by id desc
+    </select>
+
+    <select id="selectMenuPlanById" parameterType="Long" resultMap="MenuPlanResult">
+        <include refid="selectMenuPlanVo"/>
+        where id = #{id} and deleted = 0
+    </select>
+
+    <insert id="insertMenuPlan" parameterType="MenuPlan" useGeneratedKeys="true" keyProperty="id">
+        insert into menu_plan (
+            id,
+            menu_date,
+            meal_type,
+            dishes,
+            note,
+            publisher,
+            create_time,
+            deleted
+        ) values (
+            #{id},
+            #{menuDate},
+            #{mealType},
+            #{dishes},
+            #{note},
+            #{publisher},
+            sysdate(),
+            0
+        )
+    </insert>
+
+    <update id="updateMenuPlan" parameterType="MenuPlan">
+        update menu_plan
+        <set>
+            menu_date = #{menuDate},
+            meal_type = #{mealType},
+            dishes = #{dishes},
+            note = #{note},
+            publisher = #{publisher},
+            update_by = #{updateBy},
+            update_time = sysdate()
+        </set>
+        where id = #{id} and deleted = 0
+    </update>
+
+    <update id="deleteMenuPlanById" parameterType="Long">
+        update menu_plan set deleted = 1, update_time = sysdate() where id = #{id}
+    </update>
+
+    <update id="deleteMenuPlanByIds" parameterType="Long">
+        update menu_plan set deleted = 1, update_time = sysdate() where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 周视图：按日期区间取食谱，同一天内按早餐/午餐/午点排序 -->
+    <select id="selectMenuWeek" resultMap="MenuPlanResult">
+        <include refid="selectMenuPlanVo"/>
+        where deleted = 0 and menu_date between #{start} and #{end}
+        order by menu_date, field(meal_type, '早餐', '午餐', '午点')
+    </select>
+
+    <!-- 唯一键（menu_date + meal_type）冲突判断：含已软删的记录 -->
+    <select id="selectDeletedId" resultType="Long">
+        select id from menu_plan
+        where menu_date = #{menuDate} and meal_type = #{mealType} and deleted = 1
+        limit 1
+    </select>
+
+    <select id="countByDateAndMeal" resultType="int">
+        select count(*) from menu_plan
+        where menu_date = #{menuDate} and meal_type = #{mealType} and deleted = 0
+    </select>
+
+    <!-- 复活软删记录，避免重录时触发唯一键冲突 -->
+    <update id="reviveMenuPlan">
+        update menu_plan
+        set deleted = 0, dishes = #{dishes}, note = #{note}, publisher = #{publisher},
+            update_time = sysdate()
+        where id = #{id}
+    </update>
+
+</mapper>

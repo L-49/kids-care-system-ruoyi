@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kids.care.mapper.LeaveRequestMapper">
+
+    <resultMap type="LeaveRequest" id="LeaveRequestResult">
+        <result property="id"    column="id"/>
+        <result property="childId"    column="child_id"/>
+        <result property="startDate"    column="start_date"/>
+        <result property="endDate"    column="end_date"/>
+        <result property="days"    column="days"/>
+        <result property="reason"    column="reason"/>
+        <result property="status"    column="status"/>
+        <result property="approver"    column="approver"/>
+        <result property="approveTime"    column="approve_time"/>
+        <result property="deleted"    column="deleted"/>
+        <result property="createBy"    column="create_by"/>
+        <result property="createTime"    column="create_time"/>
+        <result property="updateBy"    column="update_by"/>
+        <result property="updateTime"    column="update_time"/>
+    </resultMap>
+
+    <sql id="selectLeaveRequestVo">
+        select id, child_id, start_date, end_date, days, reason, status, approver, approve_time, deleted, create_by, create_time, update_by, update_time from leave_request
+    </sql>
+
+    <select id="selectLeaveRequestList" parameterType="LeaveRequest" resultMap="LeaveRequestResult">
+        <include refid="selectLeaveRequestVo"/>
+        <where>
+            deleted = 0
+            <if test="childId != null"> and child_id = #{childId}</if>
+            <if test="startDate != null"> and start_date = #{startDate}</if>
+            <if test="endDate != null"> and end_date = #{endDate}</if>
+            <if test="days != null"> and days = #{days}</if>
+            <if test="reason != null and reason != ''"> and reason like concat('%', #{reason}, '%')</if>
+            <if test="status != null"> and status = #{status}</if>
+            <if test="approver != null and approver != ''"> and approver like concat('%', #{approver}, '%')</if>
+            <if test="approveTime != null"> and approve_time = #{approveTime}</if>
+        </where>
+        order by id desc
+    </select>
+
+    <select id="selectLeaveRequestById" parameterType="Long" resultMap="LeaveRequestResult">
+        <include refid="selectLeaveRequestVo"/>
+        where id = #{id} and deleted = 0
+    </select>
+
+    <insert id="insertLeaveRequest" parameterType="LeaveRequest" useGeneratedKeys="true" keyProperty="id">
+        insert into leave_request (
+            id,
+            child_id,
+            start_date,
+            end_date,
+            days,
+            reason,
+            status,
+            approver,
+            approve_time,
+            create_time,
+            deleted
+        ) values (
+            #{id},
+            #{childId},
+            #{startDate},
+            #{endDate},
+            #{days},
+            #{reason},
+            #{status},
+            #{approver},
+            #{approveTime},
+            sysdate(),
+            0
+        )
+    </insert>
+
+    <update id="updateLeaveRequest" parameterType="LeaveRequest">
+        update leave_request
+        <set>
+            child_id = #{childId},
+            start_date = #{startDate},
+            end_date = #{endDate},
+            days = #{days},
+            reason = #{reason},
+            status = #{status},
+            approver = #{approver},
+            approve_time = #{approveTime},
+            update_by = #{updateBy},
+            update_time = sysdate()
+        </set>
+        where id = #{id} and deleted = 0
+    </update>
+
+    <update id="deleteLeaveRequestById" parameterType="Long">
+        update leave_request set deleted = 1, update_time = sysdate() where id = #{id}
+    </update>
+
+    <update id="deleteLeaveRequestByIds" parameterType="Long">
+        update leave_request set deleted = 1, update_time = sysdate() where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 审批：只有待审批（status = 0）的记录会被更新，避免重复审批 -->
+    <update id="approveLeave">
+        update leave_request
+        set status = #{status}, approver = #{approver}, approve_time = sysdate(),
+            update_by = #{approver}, update_time = sysdate()
+        where id = #{id} and deleted = 0 and status = 0
+    </update>
+
+</mapper>

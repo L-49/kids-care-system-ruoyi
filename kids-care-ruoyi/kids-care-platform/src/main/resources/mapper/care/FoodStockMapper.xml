@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kids.care.mapper.FoodStockMapper">
+
+    <resultMap type="FoodStock" id="FoodStockResult">
+        <result property="id"    column="id"/>
+        <result property="name"    column="name"/>
+        <result property="category"    column="category"/>
+        <result property="quantity"    column="quantity"/>
+        <result property="unit"    column="unit"/>
+        <result property="warnLine"    column="warn_line"/>
+        <result property="supplier"    column="supplier"/>
+        <result property="deleted"    column="deleted"/>
+        <result property="createBy"    column="create_by"/>
+        <result property="createTime"    column="create_time"/>
+        <result property="updateBy"    column="update_by"/>
+        <result property="updateTime"    column="update_time"/>
+    </resultMap>
+
+    <sql id="selectFoodStockVo">
+        select id, name, category, quantity, unit, warn_line, supplier, deleted, create_by, create_time, update_by, update_time from food_stock
+    </sql>
+
+    <select id="selectFoodStockList" parameterType="FoodStock" resultMap="FoodStockResult">
+        <include refid="selectFoodStockVo"/>
+        <where>
+            deleted = 0
+            <if test="warnOnly != null and warnOnly">
+                and quantity &lt; warn_line
+            </if>
+            <if test="name != null and name != ''"> and name like concat('%', #{name}, '%')</if>
+            <if test="category != null and category != ''"> and category = #{category}</if>
+            <if test="unit != null and unit != ''"> and unit = #{unit}</if>
+            <if test="supplier != null and supplier != ''"> and supplier like concat('%', #{supplier}, '%')</if>
+        </where>
+        order by id desc
+    </select>
+
+    <select id="selectFoodStockById" parameterType="Long" resultMap="FoodStockResult">
+        <include refid="selectFoodStockVo"/>
+        where id = #{id} and deleted = 0
+    </select>
+
+    <insert id="insertFoodStock" parameterType="FoodStock" useGeneratedKeys="true" keyProperty="id">
+        insert into food_stock (
+            id,
+            name,
+            category,
+            quantity,
+            unit,
+            warn_line,
+            supplier,
+            create_time,
+            deleted
+        ) values (
+            #{id},
+            #{name},
+            #{category},
+            #{quantity},
+            #{unit},
+            #{warnLine},
+            #{supplier},
+            sysdate(),
+            0
+        )
+    </insert>
+
+    <update id="updateFoodStock" parameterType="FoodStock">
+        update food_stock
+        <set>
+            name = #{name},
+            category = #{category},
+            quantity = #{quantity},
+            unit = #{unit},
+            warn_line = #{warnLine},
+            supplier = #{supplier},
+            update_by = #{updateBy},
+            update_time = sysdate()
+        </set>
+        where id = #{id} and deleted = 0
+    </update>
+
+    <update id="deleteFoodStockById" parameterType="Long">
+        update food_stock set deleted = 1, update_time = sysdate() where id = #{id}
+    </update>
+
+    <update id="deleteFoodStockByIds" parameterType="Long">
+        update food_stock set deleted = 1, update_time = sysdate() where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <update id="updateQuantity">
+        update food_stock
+        set quantity = quantity + #{delta}, update_time = sysdate()
+        where id = #{id} and deleted = 0 and quantity + #{delta} &gt;= 0
+    </update>
+
+</mapper>

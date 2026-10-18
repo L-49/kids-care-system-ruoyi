@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kids.care.mapper.ChildMapper">
+
+    <resultMap type="Child" id="ChildResult">
+        <result property="id"    column="id"/>
+        <result property="name"    column="name"/>
+        <result property="gender"    column="gender"/>
+        <result property="birthday"    column="birthday"/>
+        <result property="clazzId"    column="clazz_id"/>
+        <result property="guardianName"    column="guardian_name"/>
+        <result property="guardianPhone"    column="guardian_phone"/>
+        <result property="address"    column="address"/>
+        <result property="allergy"    column="allergy"/>
+        <result property="enrollDate"    column="enroll_date"/>
+        <result property="status"    column="status"/>
+        <result property="deleted"    column="deleted"/>
+        <result property="createBy"    column="create_by"/>
+        <result property="createTime"    column="create_time"/>
+        <result property="updateBy"    column="update_by"/>
+        <result property="updateTime"    column="update_time"/>
+    </resultMap>
+
+    <sql id="selectChildVo">
+        select id, name, gender, birthday, clazz_id, guardian_name, guardian_phone, address, allergy, enroll_date, status, deleted, create_by, create_time, update_by, update_time from child
+    </sql>
+
+    <select id="selectChildList" parameterType="Child" resultMap="ChildResult">
+        <include refid="selectChildVo"/>
+        <where>
+            deleted = 0
+            <if test="id != null"> and id = #{id}</if>
+            <if test="incompleteOnly != null and incompleteOnly">
+                and (guardian_phone is null or guardian_phone = ''
+                     or allergy is null or allergy = ''
+                     or birthday is null
+                     or guardian_name is null or guardian_name = ''
+                     or address is null or address = ''
+                     or clazz_id is null
+                     or enroll_date is null)
+            </if>
+            <if test="name != null and name != ''"> and name like concat('%', #{name}, '%')</if>
+            <if test="gender != null and gender != ''"> and gender = #{gender}</if>
+            <if test="birthday != null"> and birthday = #{birthday}</if>
+            <if test="clazzId != null"> and clazz_id = #{clazzId}</if>
+            <if test="guardianName != null and guardianName != ''"> and guardian_name like concat('%', #{guardianName}, '%')</if>
+            <if test="guardianPhone != null and guardianPhone != ''"> and guardian_phone like concat('%', #{guardianPhone}, '%')</if>
+            <if test="address != null and address != ''"> and address like concat('%', #{address}, '%')</if>
+            <if test="allergy != null and allergy != ''"> and allergy like concat('%', #{allergy}, '%')</if>
+            <if test="enrollDate != null"> and enroll_date = #{enrollDate}</if>
+            <if test="status != null"> and status = #{status}</if>
+        </where>
+        order by id desc
+    </select>
+
+    <select id="selectChildById" parameterType="Long" resultMap="ChildResult">
+        <include refid="selectChildVo"/>
+        where id = #{id} and deleted = 0
+    </select>
+
+    <select id="selectAllergyList" resultMap="ChildResult">
+        <include refid="selectChildVo"/>
+        where deleted = 0 and allergy is not null and allergy != '' order by id
+    </select>
+
+    <insert id="insertChild" parameterType="Child" useGeneratedKeys="true" keyProperty="id">
+        insert into child (
+            id,
+            name,
+            gender,
+            birthday,
+            clazz_id,
+            guardian_name,
+            guardian_phone,
+            address,
+            allergy,
+            enroll_date,
+            status,
+            create_time,
+            deleted
+        ) values (
+            #{id},
+            #{name},
+            #{gender},
+            #{birthday},
+            #{clazzId},
+            #{guardianName},
+            #{guardianPhone},
+            #{address},
+            #{allergy},
+            #{enrollDate},
+            #{status},
+            sysdate(),
+            0
+        )
+    </insert>
+
+    <update id="updateChild" parameterType="Child">
+        update child
+        <set>
+            name = #{name},
+            gender = #{gender},
+            birthday = #{birthday},
+            clazz_id = #{clazzId},
+            guardian_name = #{guardianName},
+            guardian_phone = #{guardianPhone},
+            address = #{address},
+            allergy = #{allergy},
+            enroll_date = #{enrollDate},
+            status = #{status},
+            update_by = #{updateBy},
+            update_time = sysdate()
+        </set>
+        where id = #{id} and deleted = 0
+    </update>
+
+    <update id="deleteChildById" parameterType="Long">
+        update child set deleted = 1, update_time = sysdate() where id = #{id}
+    </update>
+
+    <update id="deleteChildByIds" parameterType="Long">
+        update child set deleted = 1, update_time = sysdate() where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <select id="countInClazz" resultType="long">
+        select count(*) from child
+        where deleted = 0 and status = 1 and clazz_id = #{clazzId}
+        <if test="excludeChildId != null"> and id != #{excludeChildId}</if>
+    </select>
+
+</mapper>

@@ -1,0 +1,42 @@
+幼儿园管理系统 —— 组员交接说明
+================================================================
+
+一、包里有什么
+  kids-care-ruoyi\       后端（Spring Boot 3 + 若依 3.9.2，端口 8081）
+  kids-care-ruoyi-ui\    前端（Vue3 + Vite，端口 81）
+
+  * 不含 node_modules / target / .idea —— 这些是生成物，按下面步骤自己装。
+
+二、环境要求
+  JDK 17（必须，21/23 会导致 Lombok 报错）、Maven 3.9+、
+  MySQL 8.0、Redis 5+、Node 18+ / npm 9+
+
+三、开跑前必须改两处配置
+  1) kids-care-ruoyi\kids-admin\src\main\resources\application-druid.yml
+       第 11 行 password: 改成你自己的 MySQL root 口令
+  2) kids-care-ruoyi\kids-admin\src\main\resources\application.yml
+       第 10 行 profile: D:/kids/uploadPath  改成你本机的上传目录（目录会自动创建）
+
+  Redis 用 localhost:6379 的 db 1，无密码；如有密码改 application.yml 的 spring.data.redis
+
+四、数据库初始化（首次，按顺序）
+  mysql -uroot -p < sql\ry_20260417.sql            若依基础表 + 菜单
+  mysql -uroot -p < sql\kids_migrate_v1.sql        幼儿园业务表 + 演示数据
+  mysql -uroot -p < sql\kids_menu_v2.sql           业务菜单与角色授权（幂等，可重跑）
+  mysql -uroot -p < sql\kids_today_attendance.sql  可选：当天考勤，便于看板演示
+  （quartz.sql 只有启用定时任务才需要）
+
+五、启动
+  后端：双击 kids-care-ruoyi\启动后端.bat（或在 IDEA 里运行 RuoYiApplication）
+  前端：双击 kids-care-ruoyi-ui\启动前端.bat（首次会自动 npm install，约 1-3 分钟）
+  浏览器访问 http://localhost:81
+  账号：admin / 123456（园长）、teacher / 123456（教师）、parent / 123456（家长）
+
+六、常见坑
+  * 只能用 http://localhost:81 访问，别去双击 dist/index.html（会白屏）
+  * 重新打开没有登录页直接进系统是正常的：登录态存在 Cookie 里，点右上角头像→退出登录
+  * 8081 被占用：说明上次的 java 没退干净，用 netstat -ano 查 PID 再 taskkill /F /PID
+  * 前端白屏：删掉 kids-care-ruoyi-ui\.vite-cache 重新启动
+  * 改了后端代码后必须重新 mvn install，否则 spring-boot:run 跑的是旧 jar
+
+更详细的说明见 kids-care-ruoyi\README.md

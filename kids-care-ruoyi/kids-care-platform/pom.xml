@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.kids</groupId>
+        <artifactId>kids</artifactId>
+        <version>3.9.2</version>
+    </parent>
+
+    <artifactId>kids-care-platform</artifactId>
+    <description>幼儿园业务平台：幼儿档案、班级、教职工、教学、后勤、财务与公告</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.kids</groupId>
+            <artifactId>kids-common</artifactId>
+        </dependency>
+    </dependencies>
+</project>

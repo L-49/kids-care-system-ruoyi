@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kids.care.mapper.FeeMapper">
+
+    <resultMap type="Fee" id="FeeResult">
+        <result property="id"    column="id"/>
+        <result property="childId"    column="child_id"/>
+        <result property="feeType"    column="fee_type"/>
+        <result property="amount"    column="amount"/>
+        <result property="feeMonth"    column="fee_month"/>
+        <result property="payStatus"    column="pay_status"/>
+        <result property="payTime"    column="pay_time"/>
+        <result property="deleted"    column="deleted"/>
+        <result property="createBy"    column="create_by"/>
+        <result property="createTime"    column="create_time"/>
+        <result property="updateBy"    column="update_by"/>
+        <result property="updateTime"    column="update_time"/>
+        <result property="remark"    column="remark"/>
+    </resultMap>
+
+    <sql id="selectFeeVo">
+        select id, child_id, fee_type, amount, fee_month, pay_status, pay_time, deleted, create_by, create_time, update_by, update_time, remark from fee
+    </sql>
+
+    <select id="selectFeeList" parameterType="Fee" resultMap="FeeResult">
+        <include refid="selectFeeVo"/>
+        <where>
+            deleted = 0
+            <if test="childId != null"> and child_id = #{childId}</if>
+            <if test="feeType != null and feeType != ''"> and fee_type like concat('%', #{feeType}, '%')</if>
+            <if test="feeMonth != null and feeMonth != ''"> and fee_month like concat('%', #{feeMonth}, '%')</if>
+            <if test="payStatus != null"> and pay_status = #{payStatus}</if>
+            <if test="payTime != null"> and pay_time = #{payTime}</if>
+        </where>
+        order by id desc
+    </select>
+
+    <select id="selectFeeById" parameterType="Long" resultMap="FeeResult">
+        <include refid="selectFeeVo"/>
+        where id = #{id} and deleted = 0
+    </select>
+
+    <insert id="insertFee" parameterType="Fee" useGeneratedKeys="true" keyProperty="id">
+        insert into fee (
+            id,
+            child_id,
+            fee_type,
+            amount,
+            fee_month,
+            pay_status,
+            pay_time,
+            create_time,
+            deleted
+        ) values (
+            #{id},
+            #{childId},
+            #{feeType},
+            #{amount},
+            #{feeMonth},
+            #{payStatus},
+            #{payTime},
+            sysdate(),
+            0
+        )
+    </insert>
+
+    <update id="updateFee" parameterType="Fee">
+        update fee
+        <set>
+            child_id = #{childId},
+            fee_type = #{feeType},
+            amount = #{amount},
+            fee_month = #{feeMonth},
+            pay_status = #{payStatus},
+            pay_time = #{payTime},
+            update_by = #{updateBy},
+            update_time = sysdate()
+        </set>
+        where id = #{id} and deleted = 0
+    </update>
+
+    <update id="deleteFeeById" parameterType="Long">
+        update fee set deleted = 1, update_time = sysdate() where id = #{id}
+    </update>
+
+    <update id="deleteFeeByIds" parameterType="Long">
+        update fee set deleted = 1, update_time = sysdate() where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 缴费登记：带 pay_status = 0 条件，避免重复收款 -->
+    <update id="payFee" parameterType="Long">
+        update fee
+        set pay_status = 1, pay_time = sysdate(), update_time = sysdate(), update_by = #{operator}
+        where id = #{id} and deleted = 0 and pay_status = 0
+    </update>
+
+</mapper>

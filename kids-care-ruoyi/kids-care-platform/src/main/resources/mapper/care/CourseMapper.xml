@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kids.care.mapper.CourseMapper">
+
+    <resultMap type="Course" id="CourseResult">
+        <result property="id"    column="id"/>
+        <result property="title"    column="title"/>
+        <result property="clazzId"    column="clazz_id"/>
+        <result property="teacherId"    column="teacher_id"/>
+        <result property="courseDate"    column="course_date"/>
+        <result property="startTime"    column="start_time"/>
+        <result property="endTime"    column="end_time"/>
+        <result property="content"    column="content"/>
+        <result property="status"    column="status"/>
+        <result property="deleted"    column="deleted"/>
+        <result property="createBy"    column="create_by"/>
+        <result property="createTime"    column="create_time"/>
+        <result property="updateBy"    column="update_by"/>
+        <result property="updateTime"    column="update_time"/>
+    </resultMap>
+
+    <sql id="selectCourseVo">
+        select id, title, clazz_id, teacher_id, course_date, start_time, end_time, content, status, deleted, create_by, create_time, update_by, update_time from course
+    </sql>
+
+    <select id="selectCourseList" parameterType="Course" resultMap="CourseResult">
+        <include refid="selectCourseVo"/>
+        <where>
+            deleted = 0
+            <if test="title != null and title != ''"> and title like concat('%', #{title}, '%')</if>
+            <if test="clazzId != null"> and clazz_id = #{clazzId}</if>
+            <if test="teacherId != null"> and teacher_id = #{teacherId}</if>
+            <if test="courseDate != null"> and course_date = #{courseDate}</if>
+            <if test="startTime != null and startTime != ''"> and start_time like concat('%', #{startTime}, '%')</if>
+            <if test="endTime != null and endTime != ''"> and end_time like concat('%', #{endTime}, '%')</if>
+            <if test="content != null and content != ''"> and content like concat('%', #{content}, '%')</if>
+            <if test="status != null"> and status = #{status}</if>
+        </where>
+        order by id desc
+    </select>
+
+    <select id="selectCourseById" parameterType="Long" resultMap="CourseResult">
+        <include refid="selectCourseVo"/>
+        where id = #{id} and deleted = 0
+    </select>
+
+    <insert id="insertCourse" parameterType="Course" useGeneratedKeys="true" keyProperty="id">
+        insert into course (
+            id,
+            title,
+            clazz_id,
+            teacher_id,
+            course_date,
+            start_time,
+            end_time,
+            content,
+            status,
+            create_time,
+            deleted
+        ) values (
+            #{id},
+            #{title},
+            #{clazzId},
+            #{teacherId},
+            #{courseDate},
+            #{startTime},
+            #{endTime},
+            #{content},
+            #{status},
+            sysdate(),
+            0
+        )
+    </insert>
+
+    <update id="updateCourse" parameterType="Course">
+        update course
+        <set>
+            title = #{title},
+            clazz_id = #{clazzId},
+            teacher_id = #{teacherId},
+            course_date = #{courseDate},
+            start_time = #{startTime},
+            end_time = #{endTime},
+            content = #{content},
+            status = #{status},
+            update_by = #{updateBy},
+            update_time = sysdate()
+        </set>
+        where id = #{id} and deleted = 0
+    </update>
+
+    <update id="deleteCourseById" parameterType="Long">
+        update course set deleted = 1, update_time = sysdate() where id = #{id}
+    </update>
+
+    <update id="deleteCourseByIds" parameterType="Long">
+        update course set deleted = 1, update_time = sysdate() where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+</mapper>

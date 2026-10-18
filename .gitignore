@@ -1,0 +1,9 @@
+node_modules/
+target/
+dist/
+.vite-cache/
+*.log
+logs/
+uploadPath/
+.idea/
+.DS_Store

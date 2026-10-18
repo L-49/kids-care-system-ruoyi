@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kids.care.mapper.TeacherMapper">
+
+    <resultMap type="Teacher" id="TeacherResult">
+        <result property="id"    column="id"/>
+        <result property="name"    column="name"/>
+        <result property="gender"    column="gender"/>
+        <result property="phone"    column="phone"/>
+        <result property="role"    column="role"/>
+        <result property="title"    column="title"/>
+        <result property="education"    column="education"/>
+        <result property="idCard"    column="id_card"/>
+        <result property="emergencyContact"    column="emergency_contact"/>
+        <result property="emergencyPhone"    column="emergency_phone"/>
+        <result property="entryDate"    column="entry_date"/>
+        <result property="status"    column="status"/>
+        <result property="deleted"    column="deleted"/>
+        <result property="createBy"    column="create_by"/>
+        <result property="createTime"    column="create_time"/>
+        <result property="updateBy"    column="update_by"/>
+        <result property="updateTime"    column="update_time"/>
+    </resultMap>
+
+    <sql id="selectTeacherVo">
+        select id, name, gender, phone, role, title, education, id_card, emergency_contact, emergency_phone, entry_date, status, deleted, create_by, create_time, update_by, update_time from teacher
+    </sql>
+
+    <select id="selectTeacherList" parameterType="Teacher" resultMap="TeacherResult">
+        <include refid="selectTeacherVo"/>
+        <where>
+            deleted = 0
+            <if test="name != null and name != ''"> and name like concat('%', #{name}, '%')</if>
+            <if test="gender != null and gender != ''"> and gender = #{gender}</if>
+            <if test="phone != null and phone != ''"> and phone like concat('%', #{phone}, '%')</if>
+            <if test="role != null and role != ''"> and role = #{role}</if>
+            <if test="title != null and title != ''"> and title like concat('%', #{title}, '%')</if>
+            <if test="education != null and education != ''"> and education like concat('%', #{education}, '%')</if>
+            <if test="idCard != null and idCard != ''"> and id_card like concat('%', #{idCard}, '%')</if>
+            <if test="emergencyContact != null and emergencyContact != ''"> and emergency_contact like concat('%', #{emergencyContact}, '%')</if>
+            <if test="emergencyPhone != null and emergencyPhone != ''"> and emergency_phone like concat('%', #{emergencyPhone}, '%')</if>
+            <if test="entryDate != null"> and entry_date = #{entryDate}</if>
+            <if test="status != null"> and status = #{status}</if>
+        </where>
+        order by id desc
+    </select>
+
+    <select id="selectTeacherById" parameterType="Long" resultMap="TeacherResult">
+        <include refid="selectTeacherVo"/>
+        where id = #{id} and deleted = 0
+    </select>
+
+    <insert id="insertTeacher" parameterType="Teacher" useGeneratedKeys="true" keyProperty="id">
+        insert into teacher (
+            id,
+            name,
+            gender,
+            phone,
+            role,
+            title,
+            education,
+            id_card,
+            emergency_contact,
+            emergency_phone,
+            entry_date,
+            status,
+            create_time,
+            deleted
+        ) values (
+            #{id},
+            #{name},
+            #{gender},
+            #{phone},
+            #{role},
+            #{title},
+            #{education},
+            #{idCard},
+            #{emergencyContact},
+            #{emergencyPhone},
+            #{entryDate},
+            #{status},
+            sysdate(),
+            0
+        )
+    </insert>
+
+    <update id="updateTeacher" parameterType="Teacher">
+        update teacher
+        <set>
+            name = #{name},
+            gender = #{gender},
+            phone = #{phone},
+            role = #{role},
+            title = #{title},
+            education = #{education},
+            id_card = #{idCard},
+            emergency_contact = #{emergencyContact},
+            emergency_phone = #{emergencyPhone},
+            entry_date = #{entryDate},
+            status = #{status},
+            update_by = #{updateBy},
+            update_time = sysdate()
+        </set>
+        where id = #{id} and deleted = 0
+    </update>
+
+    <update id="deleteTeacherById" parameterType="Long">
+        update teacher set deleted = 1, update_time = sysdate() where id = #{id}
+    </update>
+
+    <update id="deleteTeacherByIds" parameterType="Long">
+        update teacher set deleted = 1, update_time = sysdate() where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+</mapper>

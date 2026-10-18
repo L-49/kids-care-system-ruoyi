@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kids.care.mapper.StockRecordMapper">
+
+    <resultMap type="StockRecord" id="StockRecordResult">
+        <result property="id"    column="id"/>
+        <result property="foodId"    column="food_id"/>
+        <result property="foodName"    column="food_name"/>
+        <result property="type"    column="type"/>
+        <result property="quantity"    column="quantity"/>
+        <result property="beforeQty"    column="before_qty"/>
+        <result property="afterQty"    column="after_qty"/>
+        <result property="unit"    column="unit"/>
+        <result property="operator"    column="operator"/>
+        <result property="createBy"    column="create_by"/>
+        <result property="createTime"    column="create_time"/>
+        <result property="updateBy"    column="update_by"/>
+        <result property="updateTime"    column="update_time"/>
+        <result property="remark"    column="remark"/>
+    </resultMap>
+
+    <sql id="selectStockRecordVo">
+        select id, food_id, food_name, type, quantity, before_qty, after_qty, unit, operator, create_by, create_time, update_by, update_time, remark from stock_record
+    </sql>
+
+    <select id="selectStockRecordList" parameterType="StockRecord" resultMap="StockRecordResult">
+        <include refid="selectStockRecordVo"/>
+        <where>
+            <if test="foodId != null"> and food_id = #{foodId}</if>
+            <if test="foodName != null and foodName != ''"> and food_name like concat('%', #{foodName}, '%')</if>
+            <if test="type != null and type != ''"> and type = #{type}</if>
+            <if test="unit != null and unit != ''"> and unit = #{unit}</if>
+            <if test="operator != null and operator != ''"> and operator like concat('%', #{operator}, '%')</if>
+        </where>
+        order by id desc
+    </select>
+
+    <select id="selectStockRecordById" parameterType="Long" resultMap="StockRecordResult">
+        <include refid="selectStockRecordVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertStockRecord" parameterType="StockRecord" useGeneratedKeys="true" keyProperty="id">
+        insert into stock_record (
+            id,
+            food_id,
+            food_name,
+            type,
+            quantity,
+            before_qty,
+            after_qty,
+            unit,
+            operator,
+            create_time
+        ) values (
+            #{id},
+            #{foodId},
+            #{foodName},
+            #{type},
+            #{quantity},
+            #{beforeQty},
+            #{afterQty},
+            #{unit},
+            #{operator},
+            sysdate()
+        )
+    </insert>
+
+    <update id="updateStockRecord" parameterType="StockRecord">
+        update stock_record
+        <set>
+            food_id = #{foodId},
+            food_name = #{foodName},
+            type = #{type},
+            quantity = #{quantity},
+            before_qty = #{beforeQty},
+            after_qty = #{afterQty},
+            unit = #{unit},
+            operator = #{operator},
+            update_by = #{updateBy},
+            update_time = sysdate()
+        </set>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteStockRecordById" parameterType="Long">
+        delete from stock_record where id = #{id}
+    </delete>
+
+    <delete id="deleteStockRecordByIds" parameterType="Long">
+        delete from stock_record where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <select id="selectOverview" resultType="java.util.Map">
+        select
+            (select count(*) from food_stock where deleted = 0) as kinds,
+            (select count(*) from food_stock where deleted = 0 and quantity &lt; warn_line) as warnCount,
+            ifnull(sum(case when type = 'IN'  and date_format(create_time, '%Y-%m') = date_format(now(), '%Y-%m') then 1 else 0 end), 0) as monthInTimes,
+            ifnull(sum(case when type = 'IN'  and date_format(create_time, '%Y-%m') = date_format(now(), '%Y-%m') then quantity else 0 end), 0) as monthInQty,
+            ifnull(sum(case when type = 'OUT' and date_format(create_time, '%Y-%m') = date_format(now(), '%Y-%m') then 1 else 0 end), 0) as monthOutTimes,
+            ifnull(sum(case when type = 'OUT' and date_format(create_time, '%Y-%m') = date_format(now(), '%Y-%m') then quantity else 0 end), 0) as monthOutQty
+        from stock_record
+    </select>
+
+</mapper>

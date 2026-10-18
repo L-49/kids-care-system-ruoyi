@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kids.care.mapper.NoticeMapper">
+
+    <resultMap type="Notice" id="NoticeResult">
+        <result property="id"    column="id"/>
+        <result property="title"    column="title"/>
+        <result property="content"    column="content"/>
+        <result property="type"    column="type"/>
+        <result property="publisher"    column="publisher"/>
+        <result property="status"    column="status"/>
+        <result property="targetType"    column="target_type"/>
+        <result property="targetId"    column="target_id"/>
+        <result property="publishTime"    column="publish_time"/>
+        <result property="deleted"    column="deleted"/>
+        <result property="createBy"    column="create_by"/>
+        <result property="createTime"    column="create_time"/>
+        <result property="updateBy"    column="update_by"/>
+        <result property="updateTime"    column="update_time"/>
+    </resultMap>
+
+    <sql id="selectNoticeVo">
+        select id, title, content, type, publisher, status, target_type, target_id, publish_time, deleted, create_by, create_time, update_by, update_time from notice
+    </sql>
+
+    <select id="selectNoticeList" parameterType="Notice" resultMap="NoticeResult">
+        <include refid="selectNoticeVo"/>
+        <where>
+            deleted = 0
+            <if test="title != null and title != ''"> and title like concat('%', #{title}, '%')</if>
+            <if test="content != null and content != ''"> and content like concat('%', #{content}, '%')</if>
+            <if test="type != null and type != ''"> and type = #{type}</if>
+            <if test="publisher != null and publisher != ''"> and publisher like concat('%', #{publisher}, '%')</if>
+            <choose>
+                <when test="status != null"> and status = #{status}</when>
+                <when test="onlyPublished != null and onlyPublished"> and status = 2</when>
+                <otherwise> and status != 3</otherwise>
+            </choose>
+            <if test="visibleClazzId != null">
+                and (target_type = 'all' or (target_type = 'class' and target_id = #{visibleClazzId}))
+            </if>
+            <if test="targetType != null and targetType != ''"> and target_type = #{targetType}</if>
+            <if test="targetId != null"> and target_id = #{targetId}</if>
+            <if test="publishTime != null"> and publish_time = #{publishTime}</if>
+        </where>
+        order by id desc
+    </select>
+
+    <select id="selectNoticeById" parameterType="Long" resultMap="NoticeResult">
+        <include refid="selectNoticeVo"/>
+        where id = #{id} and deleted = 0
+    </select>
+
+    <insert id="insertNotice" parameterType="Notice" useGeneratedKeys="true" keyProperty="id">
+        insert into notice (
+            id,
+            title,
+            content,
+            type,
+            publisher,
+            status,
+            target_type,
+            target_id,
+            publish_time,
+            create_time,
+            deleted
+        ) values (
+            #{id},
+            #{title},
+            #{content},
+            #{type},
+            #{publisher},
+            #{status},
+            #{targetType},
+            #{targetId},
+            ifnull(#{publishTime}, sysdate()),
+            sysdate(),
+            0
+        )
+    </insert>
+
+    <update id="updateNotice" parameterType="Notice">
+        update notice
+        <set>
+            title = #{title},
+            content = #{content},
+            type = #{type},
+            publisher = #{publisher},
+            status = #{status},
+            target_type = #{targetType},
+            target_id = #{targetId},
+            publish_time = #{publishTime},
+            update_by = #{updateBy},
+            update_time = sysdate()
+        </set>
+        where id = #{id} and deleted = 0
+    </update>
+
+    <update id="deleteNoticeById" parameterType="Long">
+        update notice set deleted = 1, update_time = sysdate() where id = #{id}
+    </update>
+
+    <update id="deleteNoticeByIds" parameterType="Long">
+        update notice set deleted = 1, update_time = sysdate() where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <update id="updateStatus">
+        update notice set status = #{status}, update_time = sysdate() where id = #{id}
+    </update>
+
+    <update id="updateStatusAndTime">
+        update notice set status = #{status}, publish_time = #{publishTime}, update_time = sysdate()
+        where id = #{id}
+    </update>
+
+    <update id="publishDue">
+        update notice set status = 2, update_time = sysdate()
+        where status = 1 and publish_time &lt;= sysdate() and deleted = 0
+    </update>
+
+</mapper>

@@ -1,0 +1,133 @@
+package ${packageName}.controller;
+
+import java.util.List;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import com.kids.common.annotation.Log;
+import com.kids.common.core.controller.BaseController;
+import com.kids.common.core.domain.AjaxResult;
+import com.kids.common.enums.BusinessType;
+import ${packageName}.domain.${ClassName};
+import ${packageName}.service.I${ClassName}Service;
+import com.kids.common.utils.poi.ExcelUtil;
+#if($table.crud || $table.sub)
+import com.kids.common.core.page.TableDataInfo;
+#elseif($table.tree)
+#end
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+/**
+ * ${functionName}Controller
+ * 
+ * @author ${author}
+ * @date ${datetime}
+ */
+@Tag(name = "${functionName}管理", description = "${functionName}的增删改查与导出接口")
+@RestController
+@RequestMapping("/${moduleName}/${businessName}")
+public class ${ClassName}Controller extends BaseController
+{
+    @Autowired
+    private I${ClassName}Service ${className}Service;
+
+    /**
+     * 查询${functionName}列表
+     */
+    @PreAuthorize("@ss.hasPermi('${permissionPrefix}:list')")
+    @Operation(summary = "查询${functionName}列表", description = "分页查询${functionName}，支持按条件过滤")
+    @GetMapping("/list")
+#if($table.crud || $table.sub)
+    public TableDataInfo list(
+            @Parameter(description = "查询条件，可按${functionName}的条件过滤") ${ClassName} ${className})
+    {
+        startPage();
+        List<${ClassName}> list = ${className}Service.select${ClassName}List(${className});
+        return getDataTable(list);
+    }
+#elseif($table.tree)
+    public AjaxResult list(
+            @Parameter(description = "查询条件，可按${functionName}的条件过滤") ${ClassName} ${className})
+    {
+        List<${ClassName}> list = ${className}Service.select${ClassName}List(${className});
+        return success(list);
+    }
+#end
+
+    /**
+     * 导出${functionName}列表
+     */
+    @PreAuthorize("@ss.hasPermi('${permissionPrefix}:export')")
+    @Log(title = "${functionName}", businessType = BusinessType.EXPORT)
+    @Operation(summary = "导出${functionName}列表", description = "按查询条件将${functionName}数据导出为Excel文件")
+    @PostMapping("/export")
+    public void export(
+            @Parameter(description = "HTTP响应对象，用于写出Excel文件") HttpServletResponse response,
+            @Parameter(description = "查询条件，可按${functionName}的条件过滤") ${ClassName} ${className})
+    {
+        List<${ClassName}> list = ${className}Service.select${ClassName}List(${className});
+        ExcelUtil<${ClassName}> util = new ExcelUtil<${ClassName}>(${ClassName}.class);
+        util.exportExcel(response, list, "${functionName}数据");
+    }
+
+    /**
+     * 获取${functionName}详细信息
+     */
+    @PreAuthorize("@ss.hasPermi('${permissionPrefix}:query')")
+    @Operation(summary = "获取${functionName}详细信息", description = "根据${functionName}主键查询单条${functionName}的详细信息")
+    @GetMapping(value = "/{${pkColumn.javaField}}")
+    public AjaxResult getInfo(
+            @Parameter(description = "${functionName}主键", required = true) @PathVariable("${pkColumn.javaField}") ${pkColumn.javaType} ${pkColumn.javaField})
+    {
+        return success(${className}Service.getBy${pkColumn.capJavaField}(${pkColumn.javaField}));
+    }
+
+    /**
+     * 新增${functionName}
+     */
+    @PreAuthorize("@ss.hasPermi('${permissionPrefix}:add')")
+    @Log(title = "${functionName}", businessType = BusinessType.INSERT)
+    @Operation(summary = "新增${functionName}", description = "新增一条${functionName}")
+    @PostMapping
+    public AjaxResult add(
+            @Parameter(description = "${functionName}信息") @RequestBody ${ClassName} ${className})
+    {
+        return toAjax(${className}Service.insert${ClassName}(${className}));
+    }
+
+    /**
+     * 修改${functionName}
+     */
+    @PreAuthorize("@ss.hasPermi('${permissionPrefix}:edit')")
+    @Log(title = "${functionName}", businessType = BusinessType.UPDATE)
+    @Operation(summary = "修改${functionName}", description = "根据主键修改${functionName}的信息")
+    @PutMapping
+    public AjaxResult edit(
+            @Parameter(description = "${functionName}信息，主键(${pkColumn.javaField})必填") @RequestBody ${ClassName} ${className})
+    {
+        return toAjax(${className}Service.update${ClassName}(${className}));
+    }
+
+    /**
+     * 删除${functionName}
+     */
+    @PreAuthorize("@ss.hasPermi('${permissionPrefix}:remove')")
+    @Log(title = "${functionName}", businessType = BusinessType.DELETE)
+    @Operation(summary = "批量删除${functionName}", description = "根据${functionName}主键数组批量删除${functionName}")
+	@DeleteMapping("/{${pkColumn.javaField}s}")
+    public AjaxResult remove(
+            @Parameter(description = "${functionName}主键数组", required = true) @PathVariable ${pkColumn.javaType}[] ${pkColumn.javaField}s)
+    {
+        return toAjax(${className}Service.removeBy${pkColumn.capJavaField}s(List.of(${pkColumn.javaField}s)));
+    }
+}

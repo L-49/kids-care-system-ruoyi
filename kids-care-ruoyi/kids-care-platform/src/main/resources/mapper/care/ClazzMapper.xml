@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kids.care.mapper.ClazzMapper">
+
+    <resultMap type="Clazz" id="ClazzResult">
+        <result property="id"    column="id"/>
+        <result property="name"    column="name"/>
+        <result property="ageRange"    column="age_range"/>
+        <result property="room"    column="room"/>
+        <result property="capacity"    column="capacity"/>
+        <result property="headTeacherId"    column="head_teacher_id"/>
+        <result property="openDate"    column="open_date"/>
+        <result property="deleted"    column="deleted"/>
+        <result property="createBy"    column="create_by"/>
+        <result property="createTime"    column="create_time"/>
+        <result property="updateBy"    column="update_by"/>
+        <result property="updateTime"    column="update_time"/>
+        <result property="remark"    column="remark"/>
+    </resultMap>
+
+    <sql id="selectClazzVo">
+        select id, name, age_range, room, capacity, head_teacher_id, open_date, deleted, create_by, create_time, update_by, update_time, remark from clazz
+    </sql>
+
+    <select id="selectClazzList" parameterType="Clazz" resultMap="ClazzResult">
+        <include refid="selectClazzVo"/>
+        <where>
+            deleted = 0
+            <if test="name != null and name != ''"> and name like concat('%', #{name}, '%')</if>
+            <if test="ageRange != null and ageRange != ''"> and age_range like concat('%', #{ageRange}, '%')</if>
+            <if test="room != null and room != ''"> and room like concat('%', #{room}, '%')</if>
+            <if test="capacity != null"> and capacity = #{capacity}</if>
+            <if test="headTeacherId != null"> and head_teacher_id = #{headTeacherId}</if>
+            <if test="openDate != null"> and open_date = #{openDate}</if>
+        </where>
+        order by id desc
+    </select>
+
+    <select id="selectClazzById" parameterType="Long" resultMap="ClazzResult">
+        <include refid="selectClazzVo"/>
+        where id = #{id} and deleted = 0
+    </select>
+
+    <insert id="insertClazz" parameterType="Clazz" useGeneratedKeys="true" keyProperty="id">
+        insert into clazz (
+            id,
+            name,
+            age_range,
+            room,
+            capacity,
+            head_teacher_id,
+            open_date,
+            create_time,
+            deleted
+        ) values (
+            #{id},
+            #{name},
+            #{ageRange},
+            #{room},
+            #{capacity},
+            #{headTeacherId},
+            #{openDate},
+            sysdate(),
+            0
+        )
+    </insert>
+
+    <update id="updateClazz" parameterType="Clazz">
+        update clazz
+        <set>
+            name = #{name},
+            age_range = #{ageRange},
+            room = #{room},
+            capacity = #{capacity},
+            <if test="headTeacherId != null">head_teacher_id = #{headTeacherId},</if>
+            <if test="openDate != null">open_date = #{openDate},</if>
+            update_by = #{updateBy},
+            update_time = sysdate()
+        </set>
+        where id = #{id} and deleted = 0
+    </update>
+
+    <!-- 设置/取消班主任：teacherId 传 null 即为取消，不影响班级其他字段 -->
+    <update id="updateHeadTeacher">
+        update clazz set head_teacher_id = #{teacherId}, update_time = sysdate()
+        where id = #{clazzId} and deleted = 0
+    </update>
+
+    <select id="selectByHeadTeacherId" parameterType="Long" resultMap="ClazzResult">
+        <include refid="selectClazzVo"/>
+        where head_teacher_id = #{teacherId} and deleted = 0 order by id
+    </select>
+
+    <update id="deleteClazzById" parameterType="Long">
+        update clazz set deleted = 1, update_time = sysdate() where id = #{id}
+    </update>
+
+    <update id="deleteClazzByIds" parameterType="Long">
+        update clazz set deleted = 1, update_time = sysdate() where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <select id="selectByName" parameterType="String" resultMap="ClazzResult">
+        <include refid="selectClazzVo"/>
+        where name = #{name} and deleted = 0 limit 1
+    </select>
+
+</mapper>
