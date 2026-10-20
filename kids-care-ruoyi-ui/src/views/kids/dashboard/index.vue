@@ -188,11 +188,11 @@ function renderTrend(rows) {
   trendChart.setOption({
     tooltip: { trigger: 'axis' },
     legend: { data: ['出勤人数', '出勤率'], right: 10, top: 0 },
-    grid: { left: 40, right: 50, top: 40, bottom: 30 },
+    grid: { left: 40, right: 50, top: 36, bottom: 30, containLabel: false },
     xAxis: { type: 'category', data: list.map((r) => r.day), boundaryGap: true },
     yAxis: [
-      { type: 'value', name: '人数', minInterval: 1 },
-      { type: 'value', name: '出勤率', min: 0, max: 100, axisLabel: { formatter: '{value}%' } }
+      { type: 'value', minInterval: 1 },
+      { type: 'value', min: 0, max: 100, axisLabel: { formatter: '{value}%' } }
     ],
     series: [
       {
