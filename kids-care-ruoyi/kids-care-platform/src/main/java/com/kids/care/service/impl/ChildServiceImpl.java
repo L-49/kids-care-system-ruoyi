@@ -1,7 +1,10 @@
 package com.kids.care.service.impl;
 
 import java.io.InputStream;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -121,7 +124,8 @@ public class ChildServiceImpl implements IChildService
         validateChild(child, true);
         child.setName(child.getName().trim());
         checkCapacity(child.getClazzId(), null);
-        child.setStatus(child.getStatus() == null ? 1 : child.getStatus());
+        // 在园状态与入园日期绑定：预约未来入园一律为离园，到了日期查询时自动转为在园
+        child.setStatus(resolveStatus(child.getEnrollDate(), 1));
         int rows = childMapper.insertChild(child);
         writeLog(child, "新增", null, null, "建立幼儿档案", null);
         return rows;
@@ -141,6 +145,10 @@ public class ChildServiceImpl implements IChildService
             throw new ServiceException("幼儿档案不存在或已删除");
         }
         validateChild(child, false);
+        // 局部更新时用库里的旧值补齐，保证日期规则在任何一次修改中都成立
+        Date effectiveBirthday = child.getBirthday() != null ? child.getBirthday() : old.getBirthday();
+        Date effectiveEnrollDate = child.getEnrollDate() != null ? child.getEnrollDate() : old.getEnrollDate();
+        validateDateRules(effectiveBirthday, effectiveEnrollDate, false);
         ScopeUtils.checkChildAccessible(old.getId());
         if (child.getClazzId() != null && !Objects.equals(child.getClazzId(), old.getClazzId()))
         {
@@ -149,6 +157,11 @@ public class ChildServiceImpl implements IChildService
         if (child.getName() != null)
         {
             child.setName(child.getName().trim());
+        }
+        // 状态不允许手工指定，一律按入园日期重算，避免前端传值与日期矛盾
+        if (effectiveEnrollDate != null)
+        {
+            child.setStatus(resolveStatus(effectiveEnrollDate, null));
         }
         int rows = childMapper.updateChild(child);
         diffAndLog(old, child);
@@ -353,6 +366,81 @@ public class ChildServiceImpl implements IChildService
         {
             throw new ServiceException("出生日期不能晚于今天");
         }
+        if (isInsert)
+        {
+            // 新增必须两个日期齐全，否则无法判定入园年龄与在园状态
+            validateDateRules(child.getBirthday(), child.getEnrollDate(), true);
+        }
+    }
+
+    /**
+     * 入园日期与出生日期的业务规则。
+     *
+     * <p>新增时两个日期必填；出生日期必须早于入园日期；按入园日期计算须满 3 周岁且未满 7 周岁（3~6 岁）。
+     * 修改时如果库里本来缺日期，允许只改其他字段，不强制补齐。</p>
+     */
+    private void validateDateRules(Date birthday, Date enrollDate, boolean isInsert)
+    {
+        if (enrollDate == null)
+        {
+            if (isInsert)
+            {
+                throw new ServiceException("入园日期不能为空");
+            }
+            return;
+        }
+        if (birthday == null)
+        {
+            if (isInsert)
+            {
+                throw new ServiceException("出生日期不能为空");
+            }
+            return;
+        }
+        if (birthday.after(new Date()))
+        {
+            throw new ServiceException("出生日期不能晚于今天");
+        }
+        if (!birthday.before(enrollDate))
+        {
+            throw new ServiceException("出生日期必须早于入园日期");
+        }
+        int age = ageAt(birthday, enrollDate);
+        if (age < 3 || age > 6)
+        {
+            throw new ServiceException("按入园日期计算年龄为 " + age + " 岁，不符合 3~6 岁入园要求");
+        }
+    }
+
+    /** 按周岁计算入园时的年龄 */
+    private int ageAt(Date birthday, Date enrollDate)
+    {
+        Calendar b = Calendar.getInstance();
+        b.setTime(birthday);
+        Calendar e = Calendar.getInstance();
+        e.setTime(enrollDate);
+        int age = e.get(Calendar.YEAR) - b.get(Calendar.YEAR);
+        if (e.get(Calendar.MONTH) < b.get(Calendar.MONTH)
+                || (e.get(Calendar.MONTH) == b.get(Calendar.MONTH)
+                    && e.get(Calendar.DAY_OF_MONTH) < b.get(Calendar.DAY_OF_MONTH)))
+        {
+            age--;
+        }
+        return age;
+    }
+
+    /**
+     * 在园状态由入园日期决定：晚于今天（预约入园）为离园 0，当天及以前为在园 1。
+     * 落库时计算一次，查询 SQL 里再按当前日期实时计算，保证时间流逝后自动变为在园。
+     */
+    private Integer resolveStatus(Date enrollDate, Integer fallback)
+    {
+        if (enrollDate == null)
+        {
+            return fallback;
+        }
+        LocalDate enroll = enrollDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        return enroll.isAfter(LocalDate.now()) ? 0 : 1;
     }
 
     /** 班级容量校验：在园幼儿数达到额定人数即拒绝，excludeChildId 用于修改场景排除自己 */
@@ -475,11 +563,11 @@ public class ChildServiceImpl implements IChildService
                     throw new ServiceException("班级【" + row.getClazzName() + "】不存在，请先在班级管理中创建");
                 }
                 row.setClazzId(clazz.getId());
-                // 与手工新增共用同一套校验：姓名、性别、家长电话、出生日期
+                // 与手工新增共用同一套校验：姓名、性别、家长电话、出生日期、入园日期与年龄
                 validateChild(row, true);
                 row.setName(row.getName().trim());
                 checkCapacity(row.getClazzId(), null);
-                row.setStatus(row.getStatus() == null ? 1 : row.getStatus());
+                row.setStatus(resolveStatus(row.getEnrollDate(), 1));
                 childMapper.insertChild(row);
                 writeLog(row, "导入", null, null, "Excel 批量导入", null);
                 success++;

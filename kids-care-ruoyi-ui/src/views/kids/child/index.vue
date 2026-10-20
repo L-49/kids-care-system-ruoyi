@@ -40,6 +40,9 @@
         <el-button type="info" plain icon="Upload" :loading="importing" @click="handleImport" v-hasPermi="['kids:child:import']">导入</el-button>
       </el-col>
       <el-col :span="1.5">
+        <el-button plain icon="Download" @click="downloadTemplate" v-hasPermi="['kids:child:import']">下载模板</el-button>
+      </el-col>
+      <el-col :span="1.5">
         <el-button type="warning" plain icon="Download" @click="handleExport" v-hasPermi="['kids:child:export']">导出</el-button>
       </el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
@@ -100,7 +103,7 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="出生日期" prop="birthday">
-              <el-date-picker v-model="form.birthday" type="date" value-format="YYYY-MM-DD" placeholder="选择日期" style="width: 100%" />
+              <el-date-picker v-model="form.birthday" type="date" value-format="YYYY-MM-DD" placeholder="选择日期" :disabled-date="disabledFuture" style="width: 100%" @change="syncStatus" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -122,15 +125,16 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="入园日期" prop="enrollDate">
-              <el-date-picker v-model="form.enrollDate" type="date" value-format="YYYY-MM-DD" placeholder="选择日期" style="width: 100%" />
+              <el-date-picker v-model="form.enrollDate" type="date" value-format="YYYY-MM-DD" placeholder="可填未来日期，表示预约入园" style="width: 100%" @change="syncStatus" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="在园状态" prop="status">
-              <el-radio-group v-model="form.status">
+              <el-radio-group v-model="form.status" disabled>
                 <el-radio :value="1">在园</el-radio>
                 <el-radio :value="0">离园</el-radio>
               </el-radio-group>
+              <div class="form-tip">由入园日期自动判定：晚于今天为离园，当天及以前为在园</div>
             </el-form-item>
           </el-col>
           <el-col :span="24">
@@ -188,7 +192,9 @@
         <el-icon class="el-icon--upload"><upload-filled /></el-icon>
         <div class="el-upload__text">将 Excel 拖到此处，或<em>点击选择</em></div>
         <template #tip>
-          <div class="el-upload__tip">请先下载模板，按模板列填写；班级需与系统中的班级名称一致</div>
+          <div class="el-upload__tip">
+            请先<el-button link type="primary" @click="downloadTemplate">下载导入模板</el-button>，按模板列填写；班级需与系统中的班级名称一致
+          </div>
         </template>
       </el-upload>
       <template #footer>
@@ -237,12 +243,66 @@ const multiple = ref(true)
 const total = ref(0)
 const title = ref('')
 
+// ---------------- 日期规则：出生早于入园、入园年龄 3~6 岁、状态由入园日期决定 ----------------
+function todayStr() {
+  const d = new Date()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${m}-${day}`
+}
+
+/** 出生日期不允许选未来 */
+function disabledFuture(date) {
+  return date.getTime() > Date.now()
+}
+
+/** 按周岁计算入园时的年龄 */
+function ageAt(birth, enroll) {
+  const b = new Date(birth)
+  const e = new Date(enroll)
+  let age = e.getFullYear() - b.getFullYear()
+  const m = e.getMonth() - b.getMonth()
+  if (m < 0 || (m === 0 && e.getDate() < b.getDate())) age--
+  return age
+}
+
+function validateBirthday(rule, value, callback) {
+  if (!value) return callback(new Error('请选择出生日期'))
+  if (value > todayStr()) return callback(new Error('出生日期不能晚于今天'))
+  const enroll = form.value.enrollDate
+  if (enroll) {
+    if (value >= enroll) return callback(new Error('出生日期必须早于入园日期'))
+    const age = ageAt(value, enroll)
+    if (age < 3 || age > 6) return callback(new Error(`入园时年龄为 ${age} 岁，不符合 3~6 岁入园要求`))
+  }
+  callback()
+}
+
+function validateEnrollDate(rule, value, callback) {
+  if (!value) return callback(new Error('请选择入园日期'))
+  const birth = form.value.birthday
+  if (birth) {
+    if (value <= birth) return callback(new Error('入园日期必须晚于出生日期'))
+    const age = ageAt(birth, value)
+    if (age < 3 || age > 6) return callback(new Error(`入园时年龄为 ${age} 岁，不符合 3~6 岁入园要求`))
+  }
+  callback()
+}
+
 const data = reactive({
   form: {},
   queryParams: { pageNum: 1, pageSize: 10, name: null, clazzId: null, status: null, incompleteOnly: null },
   rules: {
     name: [{ required: true, message: '幼儿姓名不能为空', trigger: 'blur' }],
     clazzId: [{ required: true, message: '请选择班级', trigger: 'change' }],
+    birthday: [
+      { required: true, message: '请选择出生日期', trigger: 'change' },
+      { validator: validateBirthday, trigger: 'change' }
+    ],
+    enrollDate: [
+      { required: true, message: '请选择入园日期', trigger: 'change' },
+      { validator: validateEnrollDate, trigger: 'change' }
+    ],
     guardianPhone: [{ pattern: /^1[3-9]\d{9}$/, message: '请输入正确的 11 位手机号', trigger: 'blur' }]
   }
 })
@@ -307,7 +367,17 @@ function handleUpdate(row) {
   })
 }
 
+/** 入园日期变化时联动状态：晚于今天为离园，当天及以前为在园 */
+function syncStatus() {
+  form.value.status = form.value.enrollDate && form.value.enrollDate > todayStr() ? 0 : 1
+  if (proxy.$refs['childRef']) {
+    proxy.$refs['childRef'].validateField(['birthday', 'enrollDate'])
+  }
+}
+
 function submitForm() {
+  // 提交前再算一次，避免只改日期未触发 change 时状态与日期不一致
+  form.value.status = form.value.enrollDate && form.value.enrollDate > todayStr() ? 0 : 1
   proxy.$refs['childRef'].validate((valid) => {
     if (!valid) return
     if (form.value.id != null) {
@@ -369,6 +439,10 @@ function handleImport() {
   importVisible.value = true
 }
 
+function downloadTemplate() {
+  proxy.download('/kids/child/import/template', {}, '幼儿档案导入模板.xlsx')
+}
+
 function handleFileChange(uploadFile) {
   importFile.value = uploadFile.raw
 }
@@ -407,6 +481,14 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.form-tip {
+  width: 100%;
+  font-size: 12px;
+  color: #909399;
+  line-height: 1.5;
+  margin-top: 2px;
+}
+
 .hist-item {
   font-size: 13px;
 }

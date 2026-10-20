@@ -22,7 +22,11 @@
     </resultMap>
 
     <sql id="selectChildVo">
-        select id, name, gender, birthday, clazz_id, guardian_name, guardian_phone, address, allergy, enroll_date, status, deleted, create_by, create_time, update_by, update_time from child
+        select id, name, gender, birthday, clazz_id, guardian_name, guardian_phone, address, allergy, enroll_date,
+               case when enroll_date is not null
+                    then (case when enroll_date > curdate() then 0 else 1 end)
+                    else status end as status,
+               deleted, create_by, create_time, update_by, update_time from child
     </sql>
 
     <select id="selectChildList" parameterType="Child" resultMap="ChildResult">
@@ -48,7 +52,11 @@
             <if test="address != null and address != ''"> and address like concat('%', #{address}, '%')</if>
             <if test="allergy != null and allergy != ''"> and allergy like concat('%', #{allergy}, '%')</if>
             <if test="enrollDate != null"> and enroll_date = #{enrollDate}</if>
-            <if test="status != null"> and status = #{status}</if>
+            <if test="status != null">
+                and (case when enroll_date is not null
+                          then (case when enroll_date > curdate() then 0 else 1 end)
+                          else status end) = #{status}
+            </if>
         </where>
         order by id desc
     </select>
@@ -126,9 +134,13 @@
         </foreach>
     </update>
 
+    <!-- 在园人数同样按入园日期实时判定，预约入园的幼儿不占当前学位 -->
     <select id="countInClazz" resultType="long">
         select count(*) from child
-        where deleted = 0 and status = 1 and clazz_id = #{clazzId}
+        where deleted = 0 and clazz_id = #{clazzId}
+          and (case when enroll_date is not null
+                    then (case when enroll_date > curdate() then 0 else 1 end)
+                    else status end) = 1
         <if test="excludeChildId != null"> and id != #{excludeChildId}</if>
     </select>
 
