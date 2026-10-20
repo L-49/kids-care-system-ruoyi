@@ -215,7 +215,7 @@ POST /kids/my-child/leave           家长提交请假
 - `kids_today_attendance.sql` 只用于演示：给当天补一份混合状态的全园考勤，可重复执行（已存在则跳过）。
 - 在园状态不接受手工指定：保存时按入园日期落库，查询时用 `enroll_date > curdate()` 实时重算，
   因此「离园」只表示「预约未到/未入园」。若将来要做退园，需要新增独立的退园日期字段。
-- 顶部工作台的统计口径见根目录 [`README.md`](../README.md) 与 [`CHANGELOG-修改日志.md`](../CHANGELOG-修改日志.md)。
+- 顶部工作台的统计口径见根目录 [`README.md`](../README.md) 与 [`交付说明.md`](../交付说明.md)。
 
 ---
 
