@@ -49,6 +49,7 @@ public class StatController
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("childCount", statMapper.countChild());
         data.put("teacherCount", statMapper.countTeacher());
+        data.put("teacherRoles", statMapper.teacherRoles());
         data.put("clazzCount", statMapper.countClazz());
         data.put("noticeCount", statMapper.countNotice());
         data.put("pendingLeave", statMapper.countPendingLeave());

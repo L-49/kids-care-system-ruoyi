@@ -18,8 +18,11 @@ import org.apache.ibatis.annotations.Select;
 @Mapper
 public interface StatMapper
 {
-    /** 在园幼儿数 */
-    @Select("select count(*) from child where deleted = 0 and status = 1")
+    /** 在园幼儿数（与列表口径一致：状态按入园日期实时判定，预约未到不计入） */
+    @Select("select count(*) from child where deleted = 0 "
+            + "and (case when enroll_date is not null "
+            + "then (case when enroll_date > curdate() then 0 else 1 end) "
+            + "else status end) = 1")
     Long countChild();
 
     /** 在职教职工数 */
@@ -55,19 +58,32 @@ public interface StatMapper
             + "where deleted = 0 and att_date = curdate() group by status")
     List<Map<String, Object>> attendanceToday();
 
-    /** 近 7 天出勤趋势（幼儿园周末不开园，仅统计周一至周五） */
-    @Select("select date_format(att_date, '%m-%d') as day, "
-            + "sum(case when status = #{present} then 1 else 0 end) as present, count(*) as total "
-            + "from attendance where deleted = 0 and att_date >= date_sub(curdate(), interval 6 day) "
-            + "and dayofweek(att_date) not in (1, 7) "
-            + "group by att_date order by att_date")
+    /** 近 7 天出勤趋势：递归生成最近 7 天日期再关联网点，未登记的日期补 0，避免横轴断档（周末不开园，仅统计周一至周五） */
+    @Select("with recursive days as ( "
+            + "select curdate() as d "
+            + "union all select d - interval 1 day from days where d > date_sub(curdate(), interval 6 day) "
+            + ") "
+            + "select date_format(d, '%m-%d') as day, "
+            + "ifnull(sum(case when a.status = #{present} then 1 else 0 end), 0) as present, "
+            + "count(a.id) as total "
+            + "from days left join attendance a on a.att_date = d and a.deleted = 0 "
+            + "where dayofweek(d) not in (1, 7) "
+            + "group by d order by d")
     List<Map<String, Object>> attendanceTrend(@Param("present") String present);
 
-    /** 各班在园人数分布 */
+    /** 各班在园人数分布（与列表口径一致：状态按入园日期实时判定） */
     @Select("select c.name as name, count(ch.id) as value from clazz c "
-            + "left join child ch on ch.clazz_id = c.id and ch.deleted = 0 and ch.status = 1 "
+            + "left join child ch on ch.clazz_id = c.id and ch.deleted = 0 "
+            + "and (case when ch.enroll_date is not null "
+            + "then (case when ch.enroll_date > curdate() then 0 else 1 end) "
+            + "else ch.status end) = 1 "
             + "where c.deleted = 0 group by c.id, c.name order by c.id")
     List<Map<String, Object>> clazzDistribution();
+
+    /** 在职教职工岗位构成（role -> 人数，降序） */
+    @Select("select role as name, count(*) as value from teacher "
+            + "where deleted = 0 and status = 1 group by role order by value desc")
+    List<Map<String, Object>> teacherRoles();
 
     /** 待缴费明细（最近 5 条） */
     @Select("select ch.name as childName, f.fee_type as feeType, f.amount as amount, "

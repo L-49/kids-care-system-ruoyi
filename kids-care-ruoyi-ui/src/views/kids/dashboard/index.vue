@@ -19,7 +19,7 @@
             <el-icon><Avatar /></el-icon>
           </div>
           <div class="stat-value">{{ ov.teacherCount || 0 }}<span class="unit">人</span></div>
-          <div class="stat-sub">今日出勤 {{ todayPresent }} 人</div>
+          <div class="stat-sub">{{ teacherRoleText }}</div>
         </div>
       </el-col>
       <el-col :xs="12" :sm="12" :md="6">
@@ -84,9 +84,10 @@
               </div>
               <div class="att-num">{{ item.value }} 人</div>
             </div>
-            <div class="att-foot">
+            <div class="att-foot" v-if="todayTotal > 0">
               今日已登记 <b>{{ todayTotal }}</b> 人次，应到 <b>{{ ov.childCount || 0 }}</b> 人
             </div>
+            <div class="att-foot" v-else>今日考勤尚未登记，登记后此处显示各状态人数与占比</div>
           </div>
         </el-card>
       </el-col>
@@ -140,8 +141,14 @@ const isStaff = computed(() => {
   return roles.includes('admin') || roles.includes('teacher')
 })
 
-const todayPresent = computed(() => Number((ov.value.attendanceToday || {})['出勤'] || 0))
 const todayTotal = computed(() => Number(ov.value.attendanceTodayTotal || 0) || 0)
+
+/** 教职工卡片副标题：显示岗位构成前两名，替换原来误用的幼儿出勤数 */
+const teacherRoleText = computed(() => {
+  const roles = ov.value.teacherRoles || []
+  if (!roles.length) return '岗位构成暂无数据'
+  return roles.slice(0, 2).map((r) => `${r.name} ${r.value} 人`).join(' · ')
+})
 
 const ATT_META = [
   { key: '出勤', label: '出勤', type: 'success', color: '#67c23a' },
@@ -152,10 +159,11 @@ const ATT_META = [
 
 const attendanceItems = computed(() => {
   const today = ov.value.attendanceToday || {}
-  const max = Math.max(1, ...ATT_META.map((m) => Number(today[m.key] || 0)))
+  // 进度条按"应到人数"（在园幼儿数）计算占比，出勤条的宽度就是当天出勤率，而不是互相比较
+  const expect = Math.max(1, Number(ov.value.childCount || 0))
   return ATT_META.map((m) => {
     const value = Number(today[m.key] || 0)
-    return { ...m, value, percent: Math.round((value / max) * 100) }
+    return { ...m, value, percent: Math.round((value / expect) * 100) }
   })
 })
 
@@ -203,7 +211,8 @@ function renderTrend(rows) {
         itemStyle: { color: '#67c23a' },
         data: list.map((r) => {
           const total = Number(r.total || 0)
-          return total ? Number(((Number(r.present || 0) / total) * 100).toFixed(1)) : 0
+          // 当天没有登记记录时出勤率无意义，返回 null 让折线断开，而不是画成 0%
+          return total ? Number(((Number(r.present || 0) / total) * 100).toFixed(1)) : null
         })
       }
     ]
